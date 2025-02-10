@@ -1,5 +1,5 @@
 source "https://rubygems.org"
 
-ruby "2.7.2"  # Add this line to specify Ruby version
+ruby "3.2.2"  # This will have a newer version of RubyGems
 gem "jekyll"
 gem "bundler"
