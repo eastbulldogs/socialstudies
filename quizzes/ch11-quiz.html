@@ -120,12 +120,16 @@
 
         .home-link {
             display: block;
-            text-align: center;
-            margin-top: 20px;
+            text-align: left;
             padding: 10px;
             color: var(--green-700);
             text-decoration: none;
-            border-top: 1px solid var(--green-200);
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: white;
+            border: 1px solid var(--green-200);
+            border-radius: 4px;
         }
 
         .home-link:hover {
@@ -144,6 +148,7 @@
     <div class="container">
         <h1>The Rise of West African Kingdoms</h1>
         <div id="quiz-container"></div>
+        <a href="../index.html" class="home-link"> Back to Home</a>
     </div>
 
     <script>
