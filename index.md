@@ -1,6 +1,8 @@
 ---
-title: Welcome to Social Studies!
+title: 
 ---
+
+# Welcome to Social Studies!
 
 ![EMS Bulldog Logo](images/EMS-FullBody-Logo-01.png)
 
