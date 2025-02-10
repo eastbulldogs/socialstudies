@@ -253,11 +253,12 @@
                 this.score = 0;
                 this.currentQuestion = 0;
                 this.quizContainer = document.getElementById('quiz-container');
+                this.unlockedStorySegments = [];
             }
 
             renderQuestion() {
                 const question = questions[this.currentQuestion];
-                const story = storySegments.slice(0, this.currentQuestion + 1).join(" ");
+                const story = this.unlockedStorySegments.join(" ");
                 
                 const html = `
                     <div class="story-section">
@@ -287,8 +288,10 @@
             }
 
             checkAnswer(selectedAnswer) {
-                if (selectedAnswer === questions[this.currentQuestion].correctAnswer) {
+                const isCorrect = selectedAnswer === questions[this.currentQuestion].correctAnswer;
+                if (isCorrect) {
                     this.score++;
+                    this.unlockedStorySegments.push(storySegments[this.currentQuestion]);
                 }
 
                 this.currentQuestion++;
@@ -334,6 +337,7 @@
             restart() {
                 this.score = 0;
                 this.currentQuestion = 0;
+                this.unlockedStorySegments = [];
                 this.renderQuestion();
             }
         }
