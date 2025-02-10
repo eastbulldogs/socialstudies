@@ -1,0 +1,12 @@
+{
+  "build": {
+    "env": {
+      "JEKYLL_ENV": "production"
+    },
+    "commands": [
+      "gem install jekyll bundler",
+      "bundle install",
+      "jekyll build"
+    ]
+  }
+}
