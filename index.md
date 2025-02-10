@@ -2,7 +2,7 @@
 title: Welcome to Social Studies!
 ---
 
-<img>images/EMS-FullBody-logo-01.png</img>
+![EMS Bulldog Logo](images/EMS-FullBody-logo-01.png)
 
 ## East Middle School
 
