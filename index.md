@@ -1,4 +1,6 @@
-# Welcome to Social Studies!
+---
+title: Welcome to Social Studies!
+---
 
 ## East Middle School
 
