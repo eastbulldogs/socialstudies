@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>West African Kingdoms Quiz</title>
+    <style>
+        :root {
+            --green-50: #f0fdf4;
+            --green-700: #15803d;
+            --green-800: #166534;
+            --green-900: #14532d;
+            --yellow-500: #eab308;
+            --green-100: #dcfce7;
+            --green-200: #bbf7d0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--green-50);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 24px;
+            border: 2px solid var(--green-700);
+        }
+
+        h1 {
+            color: var(--green-800);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .story-section {
+            background-color: var(--green-100);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .story-text {
+            color: var(--green-800);
+            font-style: italic;
+            margin: 0;
+        }
+
+        .progress-bar-container {
+            background-color: var(--green-200);
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            background-color: var(--yellow-500);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .question {
+            color: var(--green-800);
+            font-size: 1.2em;
+            margin-bottom: 16px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-button {
+            background-color: white;
+            border: 1px solid var(--green-200);
+            padding: 12px;
+            text-align: left;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--green-900);
+            transition: all 0.2s ease;
+        }
+
+        .option-button:hover {
+            background-color: var(--green-50);
+            border-color: var(--green-700);
+        }
+
+        .score-section {
+            text-align: center;
+        }
+
+        .trophy {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .restart-button {
+            background-color: var(--green-700);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 16px;
+        }
+
+        .restart-button:hover {
+            background-color: var(--green-800);
+        }
+
+        .progress-text {
+            color: var(--green-700);
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Rise of West African Kingdoms</h1>
+        <div id="quiz-container"></div>
+    </div>
+
+    <script>
+        const storySegments = [
+            "Long ago, in the lands south of the great Sahara, small communities began to form...",
+            "As these communities grew, they discovered the importance of working together...",
+            "The discovery of ironworking brought great changes to these growing villages...",
+            "Along the mighty Niger River, trade routes began to flourish...",
+            "Skilled craftspeople, especially blacksmiths, gained respect and influence...",
+            "Cities like Jenne-jeno grew where rivers met, becoming centers of trade...",
+            "Leaders emerged who could organize and protect the growing settlements...",
+            "These leaders began collecting taxes from traders passing through their lands...",
+            "With their wealth and power, they built armies to protect and expand their territories...",
+            "And so the great kingdoms of West Africa rose to power, beginning centuries of prosperity..."
+        ];
+
+        const questions = [
+            {
+                question: "Which geographical features helped early West African communities trade with each other?",
+                options: [
+                    "Mountains and valleys",
+                    "Rivers, especially the Niger River",
+                    "Dense forests",
+                    "The Sahara Desert"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "What was one major reason villages joined together to form larger communities?",
+                options: [
+                    "To build entertainment centers",
+                    "To create art museums",
+                    "For protection and defense",
+                    "To compete in sports"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "How did ironworking contribute to the development of towns and cities?",
+                options: [
+                    "It made weapons for entertainment",
+                    "It created decorative items only",
+                    "It improved farming tools and increased food production",
+                    "It was only used for jewelry"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "Why were blacksmiths highly respected in early West African societies?",
+                options: [
+                    "They were the wealthiest members of society",
+                    "They could sing and dance well",
+                    "They were believed to have supernatural powers",
+                    "They were all political leaders"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "What natural resource was found in the savanna region?",
+                options: [
+                    "Mahogany trees",
+                    "Salt deposits",
+                    "Grains like millet and sorghum",
+                    "Oil palms"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "What was significant about the ancient city of Jenne-jeno?",
+                options: [
+                    "It was built by European colonizers",
+                    "It proved West Africans built cities independently",
+                    "It was the smallest trading city",
+                    "It never had any walls"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "How did rulers of trading cities maintain their power?",
+                options: [
+                    "By collecting taxes and tribute",
+                    "Through farming alone",
+                    "By closing all trade routes",
+                    "By eliminating money"
+                ],
+                correctAnswer: 0
+            },
+            {
+                question: "What role did kings play in West African kingdoms?",
+                options: [
+                    "Only political leaders",
+                    "Only religious leaders",
+                    "Both political and religious leaders",
+                    "Neither political nor religious leaders"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "What advantage did people gain from being part of a kingdom?",
+                options: [
+                    "They paid less taxes",
+                    "They received protection from raiders",
+                    "They could avoid farming",
+                    "They didn't have to trade"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "What was essential to the power of kingdoms like Mali?",
+                options: [
+                    "Control of gold trade",
+                    "Building pyramids",
+                    "Ocean navigation",
+                    "Rice farming"
+                ],
+                correctAnswer: 0
+            }
+        ];
+
+        class Quiz {
+            constructor() {
+                this.score = 0;
+                this.currentQuestion = 0;
+                this.quizContainer = document.getElementById('quiz-container');
+            }
+
+            renderQuestion() {
+                const question = questions[this.currentQuestion];
+                const story = storySegments.slice(0, this.currentQuestion + 1).join(" ");
+                
+                const html = `
+                    <div class="story-section">
+                        <p class="story-text">${story}</p>
+                    </div>
+                    
+                    <div class="progress-text">
+                        Question ${this.currentQuestion + 1} of ${questions.length}
+                    </div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${((this.currentQuestion + 1) / questions.length) * 100}%"></div>
+                    </div>
+                    
+                    <div class="question">${question.question}</div>
+                    
+                    <div class="options">
+                        ${question.options.map((option, index) => `
+                            <button class="option-button" onclick="quiz.checkAnswer(${index})">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                this.quizContainer.innerHTML = html;
+            }
+
+            checkAnswer(selectedAnswer) {
+                if (selectedAnswer === questions[this.currentQuestion].correctAnswer) {
+                    this.score++;
+                }
+
+                this.currentQuestion++;
+
+                if (this.currentQuestion < questions.length) {
+                    this.renderQuestion();
+                } else {
+                    this.showResults();
+                }
+            }
+
+            showResults() {
+                let message = '';
+                if (this.score === questions.length) {
+                    message = "Congratulations! You've mastered the history of West African kingdoms!";
+                } else if (this.score >= questions.length / 2) {
+                    message = "Well done! You're learning about the great kingdoms of West Africa!";
+                } else {
+                    message = "Keep exploring the fascinating history of West Africa!";
+                }
+
+                const storyProgress = `You've discovered ${this.score} parts of the story. ${this.score === questions.length ? 
+                    "You've unlocked the complete story of how great kingdoms rose from small villages to become mighty empires!" : 
+                    "Try again to uncover more!"}`;
+
+                const html = `
+                    <div class="score-section">
+                        <div class="trophy">🏆</div>
+                        <h2 style="color: var(--green-800)">You scored ${this.score} out of ${questions.length}!</h2>
+                        <div class="story-section">
+                            <p class="story-text">${message}</p>
+                            <p style="color: var(--green-700); margin-top: 12px;">${storyProgress}</p>
+                        </div>
+                        <button class="restart-button" onclick="quiz.restart()">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                
+                this.quizContainer.innerHTML = html;
+            }
+
+            restart() {
+                this.score = 0;
+                this.currentQuestion = 0;
+                this.renderQuestion();
+            }
+        }
+
+        const quiz = new Quiz();
+        quiz.renderQuestion();
+    </script>
+</body>
+</html>
