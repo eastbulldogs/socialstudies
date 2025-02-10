@@ -2,6 +2,8 @@
 title: Welcome to Social Studies!
 ---
 
+<img>images/EMS-FullBody-logo-01.png</img>
+
 ## East Middle School
 
 ### Mr. Moore
