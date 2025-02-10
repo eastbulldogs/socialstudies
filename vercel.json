@@ -1,13 +1,14 @@
 {
-  "framework": "ruby",
-  "build": {
-    "env": {
-      "JEKYLL_ENV": "production"
-    },
-    "commands": [
-      "gem install jekyll bundler",
-      "bundle install",
-      "jekyll build"
-    ]
-  }
+  "builds": [
+    {
+      "src": "_site/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/_site/$1"
+    }
+  ]
 }
