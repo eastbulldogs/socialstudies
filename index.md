@@ -7,7 +7,8 @@ title: Welcome to Social Studies!
 
 
 [Chapter 11 Quiz](quizzes/ch11-quiz.html)
-[Interactive History Timeline](pages/timeline)
+
+[Interactive History Timeline](/pages/timeline)
 <style>
   body {
     background: linear-gradient(135deg, #004225 0%, #006400 100%);
