@@ -1,27 +1,49 @@
+// Create the Timeline component
 const Timeline = () => {
-  const [selectedEvent, React.useState(null)];
+  const [selectedEvent, setSelectedEvent] = React.useState(null);
   
   const timelineEvents = [
     {
       year: -200,
       title: "Classical Period End",
-      description: "Transition from Classical to Medieval period",
+      description: "The late Roman Republic period marks the transition from Classical to Medieval history.",
       image: "/api/placeholder/300/200",
       funFact: "This period saw the rise of many new civilizations!"
     },
     {
       year: 476,
-      title: "Fall of Rome",
-      description: "The Western Roman Empire falls when Romulus Augustus is deposed by Odoacer.",
+      title: "Fall of Western Roman Empire",
+      description: "Romulus Augustus, the last Roman emperor, is deposed by Odoacer, marking the end of the Western Roman Empire.",
       image: "/api/placeholder/300/200",
       funFact: "The last Roman emperor shared his name with Rome's legendary founder!"
     },
     {
-      year: 1700,
-      title: "Early Modern Period",
-      description: "Transition to the Early Modern period",
+      year: 732,
+      title: "Battle of Tours",
+      description: "Charles Martel and the Franks defeat the Umayyad Caliphate, halting Islamic expansion into Western Europe.",
       image: "/api/placeholder/300/200",
-      funFact: "This period saw massive changes in science and philosophy!"
+      funFact: "Charles Martel's nickname 'The Hammer' came from his fighting style!"
+    },
+    {
+      year: 800,
+      title: "Charlemagne Crowned Emperor",
+      description: "Charlemagne is crowned Emperor of the Romans by Pope Leo III, establishing the Holy Roman Empire.",
+      image: "/api/placeholder/300/200",
+      funFact: "Charlemagne was known to be illiterate but spoke multiple languages fluently!"
+    },
+    {
+      year: 1066,
+      title: "Norman Conquest",
+      description: "William the Conqueror defeats Harold at the Battle of Hastings and becomes King of England.",
+      image: "/api/placeholder/300/200",
+      funFact: "The battle's events were recorded in the famous Bayeux Tapestry!"
+    },
+    {
+      year: 1095,
+      title: "First Crusade Begins",
+      description: "Pope Urban II calls for the First Crusade at the Council of Clermont.",
+      image: "/api/placeholder/300/200",
+      funFact: "The Pope promised forgiveness of sins to anyone who joined the crusade!"
     }
   ];
 
@@ -93,3 +115,6 @@ const Timeline = () => {
     )
   );
 };
+
+// Expose Timeline to global scope
+window.Timeline = Timeline;
