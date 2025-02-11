@@ -13,7 +13,9 @@ permalink: /pages/timeline/
 <script src="/assets/js/components/Timeline.jsx"></script>
 
 <script>
-const container = document.getElementById('timeline-root');
-const root = ReactDOM.createRoot(container);
-root.render(React.createElement(Timeline));
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('timeline-root');
+    const root = ReactDOM.createRoot(container);
+    root.render(React.createElement(Timeline));
+});
 </script>
