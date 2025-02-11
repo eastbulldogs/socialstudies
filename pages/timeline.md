@@ -6,11 +6,12 @@ permalink: /pages/timeline/
 
 <div id="timeline-root"></div>
 
-<script type="module">
-import Timeline from '../components/Timeline.jsx';
-import { createRoot } from 'react-dom/client';
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="/assets/js/components/Timeline.jsx"></script>
 
+<script>
 const container = document.getElementById('timeline-root');
-const root = createRoot(container);
-root.render(<Timeline />);
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(Timeline));
 </script>
