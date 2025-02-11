@@ -5,6 +5,7 @@ title: Welcome to Social Studies!
 ## East Middle School
 ### Mr. Moore
 
+Change at 3:41pm
 
 [Chapter 11 Quiz](quizzes/ch11-quiz.html)
 
