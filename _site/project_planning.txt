@@ -1,0 +1,19 @@
+# Project Requirements and Planning
+
+## Content Structure
+The primary curriculum for the course is medieval world history, with a heavy focus on how geography affects civilizations, usually by way of trade. Units of study include Europe, the Middle East, West Africa, China, Japan, and Mesoamerica.
+
+## Interactive Elements
+I'd like to include interactive maps, timelines, quizzes, choose-your-own-adventure type click through games, and other similar edutainment. 
+
+## Access Considerations
+Students will primarily be accessing with their school laptops, most of which are Dell Latitudes. 
+
+## Media Usage
+I plan to incorporate images hosted on Github, and embed videos from either Youtube or OneDrive.
+
+## Update Frequency
+I plan to update very frequently as we build the site, and then only occasionally add or update pages as we move through units.
+
+## Additional Notes
+[Any other relevant information]
