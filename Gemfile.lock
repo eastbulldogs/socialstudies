@@ -85,6 +85,7 @@ DEPENDENCIES
   bundler
   jekyll
   minima
+  webrick (~> 1.9)
 
 RUBY VERSION
    ruby 3.2.2p53
