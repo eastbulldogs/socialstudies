@@ -13,7 +13,8 @@ const StoryGame = () => {
   // Function to parse story content from markdown
   const parseStoryContent = async (nodeId) => {
     try {
-      const response = await window.fs.readFile(`/socialstudies/data/story/nodes/${nodeId}.md`, { encoding: 'utf8' });
+      const response = await fetch(`/_data/story/nodes/${nodeId}.md`)
+        .then(response => response.text());
       const lines = response.split('\n');
       
       // Parse frontmatter
