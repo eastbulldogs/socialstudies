@@ -10,40 +10,51 @@ layout: default
 <!-- Game Component -->
 <script>
 const StoryGame = () => {
-  // Initial story state
-  const initialStoryContent = {
-    title: 'Arrival at the Castle',
-    text: 'The towering stone walls of Castle Blackmoor rise before you, their weathered surface telling tales of centuries gone by. As a twelve-year-old boy seeking to begin your journey to knighthood, your heart pounds with excitement and nervousness. The morning mist still clings to the ground, and the bustling sounds of castle life echo from beyond the gates.',
-    choices: [
-      {
-        text: "I'd like to help in the stables - I've always loved horses.",
-        next: 'B1',
-        rewards: {
-          character_traits: ['Eager to Learn'],
-          relationships: ['Thomas (Stable Master) - New Acquaintance']
-        }
-      },
-      {
-        text: "The kitchen seems interesting - I could learn about castle life there.",
-        next: 'B2',
-        rewards: {
-          character_traits: ['Curious'],
-          relationships: ['Agnes (Head Cook) - New Acquaintance']
-        }
-      },
-      {
-        text: "Maybe I could help the messenger - I'd like to learn my way around.",
-        next: 'B3',
-        rewards: {
-          character_traits: ['Initiative'],
-          relationships: ['William (Royal Messenger) - New Acquaintance']
-        }
-      }
-    ]
+  // Function to parse story content from markdown
+  const parseStoryContent = async (nodeId) => {
+    try {
+      const response = await window.fs.readFile(`_data/story/nodes/${nodeId}.md`, { encoding: 'utf8' });
+      const lines = response.split('\n');
+      
+      // Parse frontmatter
+      const frontmatterStart = lines.findIndex(line => line.trim() === '---');
+      const frontmatterEnd = lines.slice(frontmatterStart + 1).findIndex(line => line.trim() === '---') + frontmatterStart + 1;
+      const frontmatter = {};
+      lines.slice(frontmatterStart + 1, frontmatterEnd).forEach(line => {
+        const [key, value] = line.split(': ').map(s => s.trim());
+        frontmatter[key] = value;
+      });
+      
+      // Get main content
+      const mainContent = lines.slice(frontmatterEnd + 1).join('\n').trim();
+      
+      // Parse choices
+      const choices = [];
+      const choiceLines = mainContent.split('\n').filter(line => line.startsWith('- '));
+      choiceLines.forEach(line => {
+        const text = line.substring(2);
+        const next = text.match(/\[([^\]]+)\]/)?.[1];
+        choices.push({
+          text: text.replace(/\[([^\]]+)\]/, '').trim(),
+          next,
+          rewards: {} // You can add rewards parsing if needed
+        });
+      });
+      
+      return {
+        title: frontmatter.title || '',
+        text: mainContent.split('\n- ')[0].trim(),
+        choices: choices.length > 0 ? choices : null
+      };
+    } catch (error) {
+      console.error('Error loading story node:', error);
+      return null;
+    }
   };
 
-  const [currentNode, setCurrentNode] = React.useState('Start');
-  const [storyContent, setStoryContent] = React.useState(initialStoryContent);
+  const [currentNode, setCurrentNode] = React.useState('start');
+  const [storyContent, setStoryContent] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
   const [journal, setJournal] = React.useState({
     skills: [],
     relationships: [],
@@ -52,125 +63,20 @@ const StoryGame = () => {
     character_traits: []
   });
 
-  const storyNodes = {
-    'B1': {
-      title: 'The Stables',
-      text: `The smell of hay and horses fills your nostrils as you approach the stables. Thomas, the stable master, is a tall man with weathered hands and keen eyes. He looks you up and down as Master Geoffrey introduces you.
+  React.useEffect(() => {
+    const loadInitialContent = async () => {
+      setLoading(true);
+      const content = await parseStoryContent(currentNode);
+      if (content) {
+        setStoryContent(content);
+      }
+      setLoading(false);
+    };
+    
+    loadInitialContent();
+  }, []);
 
-"So, you want to work with horses, do you?" Thomas asks, leading you past stalls where magnificent warhorses and swift coursers stand. "Let's see what you're made of. We've got a situation that needs handling."
-
-You follow his gaze to a stall where a young, spirited horse is pawing at the ground, clearly agitated. Its coat is lathered with sweat, and none of the stable boys seem eager to approach.
-
-"That's Thunder - new arrival and not yet used to castle life. We need to calm him down before he hurts himself. What's your thought, lad?"`,
-      choices: [
-        {
-          text: "I'll try to calm Thunder myself - maybe if I approach slowly and speak softly...",
-          next: 'C1_face',
-          rewards: {
-            skills: ['Basic Horse Handling'],
-            character_traits: ['Brave'],
-            knowledge: ['Horse Body Language']
-          }
-        },
-        {
-          text: "Perhaps we should get more experienced help - better to be careful with a frightened horse.",
-          next: 'C1_help',
-          rewards: {
-            character_traits: ['Prudent'],
-            knowledge: ['Stable Safety Protocols'],
-            relationships: ['Thomas (Stable Master) - Respect for Caution']
-          }
-        }
-      ]
-    },
-    'B2': {
-      title: 'The Kitchen',
-      text: `The warmth hits you first as you enter the castle kitchen, along with the rich aroma of fresh bread and herbs. Agnes, the head cook, is a stout woman with flour-dusted hands and sharp eyes that miss nothing. She pauses in her work at a large wooden table as Master Geoffrey makes introductions.
-
-"Another pair of hands, eh?" she says, looking you over. "Well, timing couldn't be better. We've got a feast to prepare for tonight - Lord Edmund's returning from his travels." She gestures to the organized chaos around you, where kitchen boys and scullery maids hurry about their tasks.
-
-"But first," she continues, lowering her voice, "we've got a more pressing matter. Someone's been taking extra food from the pantry - not much, mind you, but enough to notice. This morning, I saw a boy about your age sneaking away from the kitchen with a loaf of bread under his shirt."`,
-      choices: [
-        {
-          text: "I could help you catch the thief and report them.",
-          next: 'C2_report',
-          rewards: {
-            character_traits: ['Dutiful'],
-            relationships: ['Agnes (Head Cook) - Earned Trust'],
-            knowledge: ['Kitchen Security Protocols']
-          }
-        },
-        {
-          text: "Maybe we should find out why they're taking the food first? They might be hungry.",
-          next: 'C2_investigate',
-          rewards: {
-            character_traits: ['Compassionate', 'Diplomatic'],
-            knowledge: ['Castle Social Structure']
-          }
-        }
-      ]
-    },
-    'C1_face': {
-      title: 'Facing Thunder',
-      text: `Your heart pounds as you approach Thunder's stall, but you keep your movements slow and deliberate. Thomas watches silently from behind as you begin speaking in soft, calming tones.
-
-"Easy there, Thunder. No one's going to hurt you," you murmur. The horse's ears flick toward your voice, though he continues pawing at the ground. You notice his nostrils flaring at an unfamiliar scent coming from outside his stall.
-
-Drawing on what little you know of horses, you maintain a gentle stream of words while carefully extending your hand, palm up, letting him catch your scent.`,
-      choices: [
-        {
-          text: "Try to identify what's spooking Thunder and remove it.",
-          next: 'D1_investigate',
-          rewards: {
-            skills: ['Advanced Horse Handling', 'Problem Solving'],
-            knowledge: ['Horse Behavior'],
-            relationships: ['Thomas (Stable Master) - Impressed']
-          }
-        },
-        {
-          text: "Keep focusing on Thunder and try to gain his trust first.",
-          next: 'D1_bond',
-          rewards: {
-            skills: ['Horse Whispering'],
-            character_traits: ['Patient'],
-            relationships: ['Thunder (Horse) - Beginning Bond']
-          }
-        }
-      ]
-    },
-    'C1_help': {
-      title: 'Seeking Help',
-      text: `"Better to be careful with a frightened horse," you say thoughtfully. "Could we get someone with more experience to help?"
-
-Thomas's weathered face breaks into an approving smile. "Good head on your shoulders, lad. That's exactly right - a frightened horse can be dangerous, and there's no shame in asking for help when you need it."
-
-He waves over William, an experienced stable hand. "Will here has a way with difficult horses. Watch carefully now - there's much to learn."
-
-William demonstrates the proper approach, explaining each step as he goes. You notice how he positions himself, the timing of his movements, and the way he reads Thunder's body language.`,
-      choices: [
-        {
-          text: "Ask William if you can assist him while he works with Thunder.",
-          next: 'D2_assist',
-          rewards: {
-            skills: ['Horse Safety', 'Teamwork'],
-            relationships: ['William (Stable Hand) - Mentor'],
-            knowledge: ['Safe Horse Handling']
-          }
-        },
-        {
-          text: "Focus on observing and learning the proper techniques.",
-          next: 'D2_observe',
-          rewards: {
-            skills: ['Observation'],
-            character_traits: ['Studious'],
-            knowledge: ['Advanced Horse Handling Theory', 'Safety Protocols']
-          }
-        }
-      ]
-    }
-  };
-
-  const handleChoice = (choice) => {
+  const handleChoice = async (choice) => {
     // Update journal with rewards
     if (choice.rewards) {
       setJournal(prev => {
@@ -186,15 +92,15 @@ William demonstrates the proper approach, explaining each step as he goes. You n
     // Update current node
     setCurrentNode(choice.next);
     
-    // Update story content based on the next node
-    if (storyNodes[choice.next]) {
-      setStoryContent(storyNodes[choice.next]);
+    // Load and update story content from file
+    const newContent = await parseStoryContent(choice.next);
+    if (newContent) {
+      setStoryContent(newContent);
     }
   };
 
-  const resetGame = () => {
-    setCurrentNode('Start');
-    setStoryContent(initialStoryContent);
+  const resetGame = async () => {
+    setCurrentNode('start');
     setJournal({
       skills: [],
       relationships: [],
@@ -202,6 +108,10 @@ William demonstrates the proper approach, explaining each step as he goes. You n
       items: [],
       character_traits: []
     });
+    const content = await parseStoryContent('start');
+    if (content) {
+      setStoryContent(content);
+    }
   };
 
   // Journal Section Component
@@ -217,6 +127,14 @@ William demonstrates the proper approach, explaining each step as he goes. You n
     );
   };
 
+  if (loading) {
+    return React.createElement('div', { className: 'loading' }, 'Loading story...');
+  }
+
+  if (!storyContent) {
+    return React.createElement('div', { className: 'error' }, 'Error loading story content');
+  }
+
   return React.createElement('div', { className: 'game-container' }, [
     // Main story section
     React.createElement('div', { key: 'story-section', className: 'story-section' }, [
@@ -226,7 +144,7 @@ William demonstrates the proper approach, explaining each step as he goes. You n
       React.createElement('p', { key: 'story', className: 'story-text' }, 
         storyContent.text
       ),
-      React.createElement('div', { key: 'choices', className: 'choice-container' }, 
+      storyContent.choices && React.createElement('div', { key: 'choices', className: 'choice-container' }, 
         storyContent.choices.map((choice, index) => 
           React.createElement('button', {
             key: `choice-${index}`,
@@ -378,6 +296,20 @@ ReactDOM.render(
 
 .reset-button:hover {
   background: #c53030;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #4a5568;
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #e53e3e;
+  font-size: 1.2rem;
 }
 
 .journal-section {
