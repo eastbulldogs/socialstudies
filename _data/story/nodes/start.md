@@ -1,5 +1,5 @@
 ---
-node_id: Start
+node_id: start
 title: Arrival at the Castle
 ---
 
@@ -9,6 +9,6 @@ Master Geoffrey, the castle steward who brought you here, turns to you with a st
 
 You can see stable boys leading horses near the western wall, while kitchen smoke rises from the eastern tower. A messenger boy your age is also sorting through scrolls by the gatehouse.
 
-- [I'd like to help in the stables - I've always loved horses.] [b1]
-- [The kitchen seems interesting - I could learn about castle life there.] [b2]
-- [Maybe I could help the messenger - I'd like to learn my way around.] [b3]
+- I'd like to help in the stables - I've always loved horses. [b1]
+- The kitchen seems interesting - I could learn about castle life there. [b2]
+- Maybe I could help the messenger - I'd like to learn my way around. [b3]
