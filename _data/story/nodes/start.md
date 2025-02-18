@@ -9,27 +9,6 @@ Master Geoffrey, the castle steward who brought you here, turns to you with a st
 
 You can see stable boys leading horses near the western wall, while kitchen smoke rises from the eastern tower. A messenger boy your age is also sorting through scrolls by the gatehouse.
 
-[choices]
-- text: "I'd like to help in the stables - I've always loved horses."
-  next: B1
-  rewards:
-    character_traits: 
-      - "Eager to Learn"
-    relationships:
-      - "Thomas (Stable Master) - New Acquaintance"
-
-- text: "The kitchen seems interesting - I could learn about castle life there."
-  next: B2
-  rewards:
-    character_traits:
-      - "Curious"
-    relationships:
-      - "Agnes (Head Cook) - New Acquaintance"
-
-- text: "Maybe I could help the messenger - I'd like to learn my way around."
-  next: B3
-  rewards:
-    character_traits:
-      - "Initiative"
-    relationships:
-      - "William (Royal Messenger) - New Acquaintance"
+- [I'd like to help in the stables - I've always loved horses.] [b1]
+- [The kitchen seems interesting - I could learn about castle life there.] [b2]
+- [Maybe I could help the messenger - I'd like to learn my way around.] [b3]
