@@ -5,9 +5,11 @@ title: Welcome to Social Studies!
 ## East Middle School
 ### Mr. Moore
 
-Change at 3:41pm
+timeline test 2
 
-[Chapter 11 Quiz](quizzes/ch11-quiz.html)
+[Chapter 11 Quiz](/pages/quizzes/ch11-quiz.html)
+
+[Chapter 12 Quiz](/pages/quizzes/ch12-quiz.html)
 
 [Interactive History Timeline](/pages/timeline)
 <style>

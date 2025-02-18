@@ -1,1 +1,10 @@
 theme: minima
+plugins:
+  - jekyll-feed
+
+# Asset settings
+sass:
+  style: compressed
+
+# Build settings
+markdown: kramdown

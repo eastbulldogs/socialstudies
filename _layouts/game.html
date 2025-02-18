@@ -1,0 +1,362 @@
+---
+layout: default
+---
+<div id="story-game-root"></div>
+
+<!-- React and ReactDOM -->
+<script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+
+<!-- Game Component -->
+<script>
+const StoryGame = () => {
+  // Function to parse story content from markdown
+  const parseStoryContent = async (nodeId) => {
+    try {
+      const response = await window.fs.readFile(`/data/story/nodes/${nodeId}.md`, { encoding: 'utf8' });
+      const lines = response.split('\n');
+      
+      // Parse frontmatter
+      const frontmatterStart = lines.findIndex(line => line.trim() === '---');
+      const frontmatterEnd = lines.slice(frontmatterStart + 1).findIndex(line => line.trim() === '---') + frontmatterStart + 1;
+      const frontmatter = {};
+      lines.slice(frontmatterStart + 1, frontmatterEnd).forEach(line => {
+        const [key, value] = line.split(': ').map(s => s.trim());
+        frontmatter[key] = value;
+      });
+      
+      // Get main content
+      const mainContent = lines.slice(frontmatterEnd + 1).join('\n').trim();
+      
+      // Parse choices
+      const choices = [];
+      const choiceLines = mainContent.split('\n').filter(line => line.startsWith('- '));
+      choiceLines.forEach(line => {
+        const text = line.substring(2);
+        const next = text.match(/\[([^\]]+)\]/)?.[1];
+        choices.push({
+          text: text.replace(/\[([^\]]+)\]/, '').trim(),
+          next,
+          rewards: {} // You can add rewards parsing if needed
+        });
+      });
+      
+      return {
+        title: frontmatter.title || '',
+        text: mainContent.split('\n- ')[0].trim(),
+        choices: choices.length > 0 ? choices : null
+      };
+    } catch (error) {
+      console.error(`Error loading story node ${nodeId}:`, error);
+      console.error('File path attempted:', `/data/story/nodes/${nodeId}.md`);
+      return null;
+    }
+  };
+
+  const [currentNode, setCurrentNode] = React.useState('start');
+  const [storyContent, setStoryContent] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [journal, setJournal] = React.useState({
+    skills: [],
+    relationships: [],
+    knowledge: [],
+    items: [],
+    character_traits: []
+  });
+
+  React.useEffect(() => {
+    const loadInitialContent = async () => {
+      setLoading(true);
+      const content = await parseStoryContent(currentNode);
+      if (content) {
+        setStoryContent(content);
+      }
+      setLoading(false);
+    };
+    
+    loadInitialContent();
+  }, []);
+
+  const handleChoice = async (choice) => {
+    // Update journal with rewards
+    if (choice.rewards) {
+      setJournal(prev => {
+        const newJournal = { ...prev };
+        Object.entries(choice.rewards).forEach(([category, items]) => {
+          if (!newJournal[category]) newJournal[category] = [];
+          newJournal[category] = [...new Set([...newJournal[category], ...items])];
+        });
+        return newJournal;
+      });
+    }
+
+    // Update current node
+    setCurrentNode(choice.next);
+    
+    // Load and update story content from file
+    const newContent = await parseStoryContent(choice.next);
+    if (newContent) {
+      setStoryContent(newContent);
+    }
+  };
+
+  const resetGame = async () => {
+    setCurrentNode('start');
+    setJournal({
+      skills: [],
+      relationships: [],
+      knowledge: [],
+      items: [],
+      character_traits: []
+    });
+    const content = await parseStoryContent('start');
+    if (content) {
+      setStoryContent(content);
+    }
+  };
+
+  // Journal Section Component
+  const JournalSection = ({ title, items }) => {
+    if (!items || items.length === 0) return null;
+    return React.createElement('div', { className: 'journal-section' },
+      React.createElement('h3', { key: 'title' }, title),
+      React.createElement('ul', { key: 'list' }, 
+        items.map((item, index) => 
+          React.createElement('li', { key: index }, item)
+        )
+      )
+    );
+  };
+
+  if (loading) {
+    return React.createElement('div', { className: 'loading' }, 'Loading story...');
+  }
+
+  if (!storyContent) {
+    return React.createElement('div', { className: 'error' }, 'Error loading story content');
+  }
+
+  return React.createElement('div', { className: 'game-container' }, [
+    // Main story section
+    React.createElement('div', { key: 'story-section', className: 'story-section' }, [
+      React.createElement('h2', { key: 'title', className: 'game-title' }, 
+        storyContent.title
+      ),
+      React.createElement('p', { key: 'story', className: 'story-text' }, 
+        storyContent.text
+      ),
+      storyContent.choices && React.createElement('div', { key: 'choices', className: 'choice-container' }, 
+        storyContent.choices.map((choice, index) => 
+          React.createElement('button', {
+            key: `choice-${index}`,
+            onClick: () => handleChoice(choice),
+            className: 'choice-button'
+          }, choice.text)
+        )
+      ),
+      React.createElement('button', {
+        key: 'reset-button',
+        onClick: resetGame,
+        className: 'reset-button'
+      }, 'Start Over')
+    ]),
+    
+    // Journal section
+    React.createElement('div', { key: 'journal', className: 'journal' }, [
+      React.createElement('h2', { key: 'journal-title', className: 'journal-title' }, 
+        'Your Journal'
+      ),
+      React.createElement(JournalSection, { 
+        key: 'skills',
+        title: 'Skills Learned',
+        items: journal.skills 
+      }),
+      React.createElement(JournalSection, { 
+        key: 'relationships',
+        title: 'Relationships',
+        items: journal.relationships 
+      }),
+      React.createElement(JournalSection, { 
+        key: 'knowledge',
+        title: 'Knowledge Gained',
+        items: journal.knowledge 
+      }),
+      React.createElement(JournalSection, { 
+        key: 'items',
+        title: 'Items Acquired',
+        items: journal.items 
+      }),
+      React.createElement(JournalSection, { 
+        key: 'character_traits',
+        title: 'Character Traits',
+        items: journal.character_traits 
+      })
+    ])
+  ]);
+};
+
+// Render the game
+ReactDOM.render(
+  React.createElement(StoryGame),
+  document.getElementById('story-game-root')
+);
+</script>
+
+<style>
+.game-container {
+  display: flex;
+  max-width: 1200px;
+  margin: 20px auto;
+  gap: 20px;
+  padding: 20px;
+  min-height: 600px;
+}
+
+.story-section {
+  flex: 2;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: relative;
+  min-height: 400px;
+  border: 1px solid #e2e8f0;
+}
+
+.journal {
+  flex: 1;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+}
+
+.game-title {
+  color: #2d3748;
+  font-size: 24px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.journal-title {
+  color: #2d3748;
+  font-size: 20px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.story-text {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  color: #2d3748;
+}
+
+.choice-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 60px;
+}
+
+.choice-button {
+  background: #4a5568;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.choice-button:hover {
+  background: #2d3748;
+}
+
+.reset-button {
+  background: #e53e3e;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+}
+
+.reset-button:hover {
+  background: #c53030;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #4a5568;
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #e53e3e;
+  font-size: 1.2rem;
+}
+
+.journal-section {
+  margin-bottom: 20px;
+}
+
+.journal-section h3 {
+  color: #4a5568;
+  font-size: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.journal-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.journal-section li {
+  font-size: 14px;
+  color: #4a5568;
+  padding: 6px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    flex-direction: column;
+  }
+  
+  .journal {
+    max-height: none;
+  }
+  
+  .story-section {
+    min-height: 300px;
+  }
+
+  .choice-container {
+    margin-bottom: 80px;
+  }
+
+  .choice-button {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+}
