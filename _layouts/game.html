@@ -13,7 +13,7 @@ const StoryGame = () => {
   // Function to parse story content from markdown
   const parseStoryContent = async (nodeId) => {
     try {
-      const response = await window.fs.readFile(`_data/story/nodes/${nodeId}.md`, { encoding: 'utf8' });
+      const response = await window.fs.readFile(`/data/story/nodes/${nodeId}.md`, { encoding: 'utf8' });
       const lines = response.split('\n');
       
       // Parse frontmatter
@@ -47,7 +47,8 @@ const StoryGame = () => {
         choices: choices.length > 0 ? choices : null
       };
     } catch (error) {
-      console.error('Error loading story node:', error);
+      console.error(`Error loading story node ${nodeId}:`, error);
+      console.error('File path attempted:', `/data/story/nodes/${nodeId}.md`);
       return null;
     }
   };
