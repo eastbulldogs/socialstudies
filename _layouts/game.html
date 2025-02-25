@@ -166,12 +166,15 @@ const StoryGame = () => {
           
           currentChoice = {
             text: line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1'),
+            next: null, // Initialize with null to prevent undefined errors
             rewards: {}
           };
           inRewards = false;
         } else if (line.startsWith('  next:')) {
           if (currentChoice) {
-            currentChoice.next = line.substring('  next:'.length).trim();
+            // Extract the next value, make sure it's not empty
+            const nextValue = line.substring('  next:'.length).trim();
+            currentChoice.next = nextValue || null;
           }
         } else if (line.startsWith('  rewards:')) {
           inRewards = true;
@@ -369,6 +372,12 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
         
         return newJournal;
       });
+    }
+
+    // Check if next node is defined
+    if (!choice.next) {
+      setErrorMessage(`Missing destination for choice: "${choice.text}". Check your markdown file for a missing "next:" property.`);
+      return;
     }
 
     // Update current node - make sure the nodeId is lowercase to match your file naming
