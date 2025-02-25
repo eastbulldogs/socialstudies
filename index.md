@@ -12,6 +12,8 @@ timeline test 2
 [Chapter 12 Quiz](/pages/quizzes/ch12-quiz.html)
 
 [Interactive History Timeline](/pages/timeline)
+
+[Choose Your Own Adventure - Become a knight!](/games/knight-adventure.html)
 <style>
   body {
     background: linear-gradient(135deg, #004225 0%, #006400 100%);
