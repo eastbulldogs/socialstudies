@@ -14,16 +14,41 @@ const StoryGame = () => {
   const parseStoryContent = async (nodeId) => {
     try {
       console.log(`Attempting to load node: ${nodeId}`);
-      // Try to fetch the node file using the correct path structure
-      const response = await fetch(`/socialstudies/_data/story/nodes/${nodeId}.md`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch node ${nodeId}: ${response.status}`);
-          }
-          return response.text();
-        });
       
-      console.log(`Successfully loaded node: ${nodeId}`);
+      // Try different possible path patterns for GitHub Pages
+      const possiblePaths = [
+        `/socialstudies/_data/story/nodes/${nodeId}.md`,
+        `/socialstudies/data/story/nodes/${nodeId}.md`,
+        `/_data/story/nodes/${nodeId}.md`,
+        `/data/story/nodes/${nodeId}.md`,
+        `/story/nodes/${nodeId}.md`,
+        `/nodes/${nodeId}.md`,
+        `/${nodeId}.md`
+      ];
+      
+      let response = null;
+      let successPath = null;
+      
+      // Try each path until one works
+      for (const path of possiblePaths) {
+        console.log(`Trying path: ${path}`);
+        try {
+          const resp = await fetch(path);
+          if (resp.ok) {
+            response = await resp.text();
+            successPath = path;
+            console.log(`Successfully loaded from: ${path}`);
+            break;
+          }
+        } catch (e) {
+          console.log(`Failed at path: ${path}`);
+        }
+      }
+      
+      if (!response) {
+        throw new Error(`Could not load node ${nodeId} from any attempted paths`);
+      }
+      
       const lines = response.split('\n');
       
       // Find frontmatter boundaries (---) 
@@ -121,11 +146,11 @@ const StoryGame = () => {
         nodeId: nodeId,
         title: frontmatter.title || '',
         text: mainContent,
+        successPath: successPath,
         choices: choices.length > 0 ? choices : null
       };
     } catch (error) {
       console.error(`Error loading story node ${nodeId}:`, error);
-      console.error('File path attempted:', `/socialstudies/_data/story/nodes/${nodeId}.md`);
       
       // If there's an error, show a debugging view with helpful information
       return {
@@ -134,11 +159,11 @@ const StoryGame = () => {
         text: `Could not load node "${nodeId}". Error details: ${error.message}
 
 Troubleshooting tips:
-1. Check if the file exists at /socialstudies/_data/story/nodes/${nodeId}.md
-2. Verify that the file has proper frontmatter (--- sections)
-3. Check your browser console for more details`,
+1. Make sure your story nodes are in the correct location
+2. Check that start.md exists and has proper frontmatter (--- sections)
+3. Open your browser's developer console (F12) for more detailed errors`,
         choices: [{
-          text: 'Go back to start',
+          text: 'Try again',
           next: 'start',
           rewards: {}
         }]
@@ -248,7 +273,7 @@ Troubleshooting tips:
     // Main story section
     React.createElement('div', { key: 'story-section', className: 'story-section' }, [
       React.createElement('div', { key: 'node-id', className: 'node-id' },
-        `Node: ${storyContent.nodeId}`
+        `Node: ${storyContent.nodeId}${storyContent.successPath ? ` (${storyContent.successPath})` : ''}`
       ),
       React.createElement('h2', { key: 'title', className: 'game-title' }, 
         storyContent.title
