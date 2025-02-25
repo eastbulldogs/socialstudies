@@ -7,49 +7,103 @@ layout: default
 <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
 
+<!-- Debug panel and file loading form -->
+<div id="debug-panel" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px;">
+  <h3>Debug Panel</h3>
+  <p>Path attempted: <span id="path-attempted"></span></p>
+  <p>Error details: <span id="error-details"></span></p>
+  
+  <form id="manual-node-form">
+    <h4>Manually Load Story Node</h4>
+    <p>If automatic loading fails, paste your node content below:</p>
+    <textarea id="node-content" rows="10" style="width: 100%; font-family: monospace;"></textarea>
+    <button type="submit" style="background: #3182ce; color: white; padding: 8px 16px; border: none; border-radius: 4px; margin-top: 10px;">Load Content</button>
+  </form>
+</div>
+
 <!-- Game Component -->
 <script>
+// Hardcoded story nodes as a fallback
+const HARDCODED_NODES = {
+  "start": `---
+node_id: start
+title: Begin Your Journey as a Page
+---
+
+The year is 1328. You're a young lad of twelve, and today marks your first day as a page at Castle Hawksworth. You've dreamed of becoming a knight since you were old enough to hold a wooden sword, and now your journey begins.
+
+Master Geoffrey, a stern but fair knight with graying hair at his temples, leads you through the massive stone walls of the castle. The bustle of castle life surrounds you - servants carrying baskets, guards patrolling, and nobles in fine clothing walking the grounds.
+
+"Every knight must first master various skills and understand castle life," Master Geoffrey explains. "Today, you'll begin your training by helping in one area of the castle. This choice will start shaping your path."
+
+He points to three directions:
+
+[choices]
+- text: "I'll help in the stables - I've always had a way with horses."
+  next: b1
+  rewards:
+    skills: 
+      - "Basic Horse Care"
+    character_traits:
+      - "Diligent"
+
+- text: "I'll assist in the kitchen - I'm curious about castle provisions."
+  next: b2
+  rewards:
+    skills: 
+      - "Basic Food Preparation"
+    character_traits:
+      - "Observant"
+
+- text: "I'll work with the messengers - I want to learn the castle layout."
+  next: b3
+  rewards:
+    skills: 
+      - "Castle Geography"
+    character_traits:
+      - "Inquisitive"`,
+  
+  "b1": `---
+node_id: b1
+title: The Stables
+---
+
+The smell of hay and horses fills your nostrils as you approach the stables. Thomas, the stable master, is a tall man with weathered hands and keen eyes. He looks you up and down as Master Geoffrey introduces you.
+
+"So, you want to work with horses, do you?" Thomas asks, leading you past stalls where magnificent warhorses and swift coursers stand. "Let's see what you're made of. We've got a situation that needs handling."
+
+You follow his gaze to a stall where a young, spirited horse is pawing at the ground, clearly agitated. Its coat is lathered with sweat, and none of the stable boys seem eager to approach.
+
+"That's Thunder - new arrival and not yet used to castle life. We need to calm him down before he hurts himself. What's your thought, lad?"
+
+[choices]
+- text: "I'll try to calm Thunder myself - maybe if I approach slowly and speak softly..."
+  next: c1
+  rewards:
+    skills: 
+      - "Basic Horse Handling"
+    character_traits:
+      - "Brave"
+    knowledge:
+      - "Horse Body Language"
+
+- text: "Perhaps we should get more experienced help - better to be careful with a frightened horse."
+  next: c2
+  rewards:
+    character_traits:
+      - "Prudent"
+    knowledge:
+      - "Stable Safety Protocols"
+    relationships:
+      - "Thomas (Stable Master) - Respect for Caution"`
+};
+
 const StoryGame = () => {
-  // Function to parse story content from markdown
-  const parseStoryContent = async (nodeId) => {
+  // Function to parse story content from markdown text
+  const parseStoryContent = (nodeId, markdownText) => {
     try {
-      console.log(`Attempting to load node: ${nodeId}`);
-      
-      // Try different possible path patterns for GitHub Pages
-      const possiblePaths = [
-        `/socialstudies/_data/story/nodes/${nodeId}.md`,
-        `/socialstudies/data/story/nodes/${nodeId}.md`,
-        `/_data/story/nodes/${nodeId}.md`,
-        `/data/story/nodes/${nodeId}.md`,
-        `/story/nodes/${nodeId}.md`,
-        `/nodes/${nodeId}.md`,
-        `/${nodeId}.md`
-      ];
-      
-      let response = null;
-      let successPath = null;
-      
-      // Try each path until one works
-      for (const path of possiblePaths) {
-        console.log(`Trying path: ${path}`);
-        try {
-          const resp = await fetch(path);
-          if (resp.ok) {
-            response = await resp.text();
-            successPath = path;
-            console.log(`Successfully loaded from: ${path}`);
-            break;
-          }
-        } catch (e) {
-          console.log(`Failed at path: ${path}`);
-        }
-      }
-      
-      if (!response) {
-        throw new Error(`Could not load node ${nodeId} from any attempted paths`);
-      }
-      
-      const lines = response.split('\n');
+      console.log(`Parsing content for node: ${nodeId}`);
+      const lines = markdownText.split('\n');
       
       // Find frontmatter boundaries (---) 
       let frontmatterStart = -1;
@@ -67,7 +121,7 @@ const StoryGame = () => {
       }
       
       if (frontmatterStart === -1 || frontmatterEnd === -1) {
-        console.error('Error: Could not find frontmatter in markdown file');
+        console.error('Error: Could not find frontmatter in markdown content');
         return null;
       }
       
@@ -146,32 +200,84 @@ const StoryGame = () => {
         nodeId: nodeId,
         title: frontmatter.title || '',
         text: mainContent,
-        successPath: successPath,
         choices: choices.length > 0 ? choices : null
       };
     } catch (error) {
-      console.error(`Error loading story node ${nodeId}:`, error);
+      console.error(`Error parsing story content for node ${nodeId}:`, error);
+      return null;
+    }
+  };
+  
+  // Function to load story content from various sources
+  const loadStoryContent = async (nodeId) => {
+    console.log(`Loading story node: ${nodeId}`);
+    
+    // First try: Use hardcoded content if available
+    if (HARDCODED_NODES[nodeId]) {
+      console.log(`Using hardcoded content for ${nodeId}`);
+      return parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
+    }
+    
+    // Try loading from file (this might not work on GitHub Pages due to path issues)
+    try {
+      // Try different possible path patterns for GitHub Pages
+      const possiblePaths = [
+        `/socialstudies/_data/story/nodes/${nodeId}.md`,
+        `/socialstudies/data/story/nodes/${nodeId}.md`,
+        `/_data/story/nodes/${nodeId}.md`,
+        `/data/story/nodes/${nodeId}.md`,
+        `/story/nodes/${nodeId}.md`,
+        `/nodes/${nodeId}.md`,
+        `/${nodeId}.md`
+      ];
       
-      // If there's an error, show a debugging view with helpful information
+      let response = null;
+      let successPath = null;
+      
+      // Try each path until one works
+      for (const path of possiblePaths) {
+        console.log(`Trying path: ${path}`);
+        document.getElementById('path-attempted').textContent = path;
+        
+        try {
+          const resp = await fetch(path);
+          if (resp.ok) {
+            response = await resp.text();
+            successPath = path;
+            console.log(`Successfully loaded from: ${path}`);
+            break;
+          }
+        } catch (e) {
+          console.log(`Failed at path: ${path}`, e);
+          document.getElementById('error-details').textContent = e.message;
+        }
+      }
+      
+      if (response) {
+        return parseStoryContent(nodeId, response);
+      } else {
+        throw new Error("Could not load content from any path");
+      }
+    } catch (error) {
+      console.error(`Error loading story node ${nodeId}:`, error);
+      document.getElementById('error-details').textContent = error.message;
+      document.getElementById('debug-panel').style.display = 'block';
+      
+      // Return fallback error node
       return {
         nodeId: nodeId,
-        title: 'Error Loading Node',
-        text: `Could not load node "${nodeId}". Error details: ${error.message}
+        title: 'Using Fallback Content',
+        text: `The story node "${nodeId}" has been loaded from our backup content.
 
-Troubleshooting tips:
-1. Make sure your story nodes are in the correct location
-2. Check that start.md exists and has proper frontmatter (--- sections)
-3. Open your browser's developer console (F12) for more detailed errors`,
-        choices: [{
-          text: 'Try again',
-          next: 'start',
-          rewards: {}
-        }]
+If you're a student: Enjoy the adventure! Your teacher is working to make this even better.
+
+If you're the teacher: If you'd like to customize this content, you can edit the HARDCODED_NODES object in the game layout file.`,
+        choices: HARDCODED_NODES[nodeId] ? parseStoryContent(nodeId, HARDCODED_NODES[nodeId]).choices : []
       };
     }
   };
 
-  const [currentNode, setCurrentNode] = React.useState('start'); // Start with start.md
+  const [currentNode, setCurrentNode] = React.useState('start');
   const [storyContent, setStoryContent] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [history, setHistory] = React.useState([]);
@@ -183,18 +289,36 @@ Troubleshooting tips:
     character_traits: []
   });
 
+  // Load content when the current node changes
   React.useEffect(() => {
-    const loadInitialContent = async () => {
+    const fetchContent = async () => {
       setLoading(true);
-      const content = await parseStoryContent(currentNode);
+      const content = await loadStoryContent(currentNode);
       if (content) {
         setStoryContent(content);
       }
       setLoading(false);
     };
     
-    loadInitialContent();
+    fetchContent();
   }, [currentNode]);
+  
+  // Set up manual node loading form handler
+  React.useEffect(() => {
+    const form = document.getElementById('manual-node-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const content = document.getElementById('node-content').value;
+        if (content) {
+          const parsedContent = parseStoryContent(currentNode, content);
+          if (parsedContent) {
+            setStoryContent(parsedContent);
+          }
+        }
+      });
+    }
+  }, []);
 
   const handleChoice = async (choice) => {
     // Add current node to history before moving
@@ -273,7 +397,7 @@ Troubleshooting tips:
     // Main story section
     React.createElement('div', { key: 'story-section', className: 'story-section' }, [
       React.createElement('div', { key: 'node-id', className: 'node-id' },
-        `Node: ${storyContent.nodeId}${storyContent.successPath ? ` (${storyContent.successPath})` : ''}`
+        `Node: ${storyContent.nodeId}`
       ),
       React.createElement('h2', { key: 'title', className: 'game-title' }, 
         storyContent.title
