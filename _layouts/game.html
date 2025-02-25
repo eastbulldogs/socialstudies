@@ -62,6 +62,103 @@ He points to three directions:
       - "Inquisitive"
 `;
 
+// Include the direct choice parser
+/**
+ * A simplified, direct parser for story content with a focus on correctly parsing choices
+ */
+function directChoiceParser(nodeId, markdownText) {
+  console.log(`Direct parsing for node: ${nodeId}`);
+  
+  try {
+    // Split content into sections
+    const parts = markdownText.split('[choices]');
+    if (parts.length !== 2) {
+      console.error('Could not find [choices] section in markdown');
+      return {
+        nodeId,
+        title: 'Error Parsing Content',
+        text: 'Could not find choices section.',
+        choices: []
+      };
+    }
+    
+    // Get the content part (everything before [choices])
+    const contentPart = parts[0];
+    
+    // Get the choices part (everything after [choices])
+    const choicesPart = parts[1];
+    
+    // Extract frontmatter
+    const frontmatterMatch = contentPart.match(/---\s+([\s\S]*?)\s+---/);
+    let title = '';
+    
+    if (frontmatterMatch && frontmatterMatch[1]) {
+      const frontmatterLines = frontmatterMatch[1].split('\n');
+      for (const line of frontmatterLines) {
+        if (line.startsWith('title:')) {
+          title = line.substring('title:'.length).trim();
+          break;
+        }
+      }
+    }
+    
+    // Extract main content (between frontmatter and choices)
+    let text = '';
+    if (frontmatterMatch) {
+      text = contentPart.substring(frontmatterMatch[0].length).trim();
+    } else {
+      text = contentPart.trim();
+    }
+    
+    // Parse choices using a more direct regex approach
+    const choices = [];
+    
+    // Match each choice block
+    const choiceBlocks = choicesPart.split(/(?=\s*-\s*text:)/g);
+    
+    for (const block of choiceBlocks) {
+      if (!block.trim()) continue;
+      
+      // Extract text
+      const textMatch = block.match(/\s*-\s*text:\s*"?([^"\n]+)"?/);
+      if (!textMatch) continue;
+      
+      const choice = {
+        text: textMatch[1].trim(),
+        next: null,
+        rewards: {}
+      };
+      
+      // Extract next
+      const nextMatch = block.match(/\s+next:\s*([^\s\n]+)/);
+      if (nextMatch) {
+        choice.next = nextMatch[1].trim();
+        console.log(`Direct parser found next: "${choice.next}" for choice: "${choice.text}"`);
+      }
+      
+      // Add the choice
+      choices.push(choice);
+    }
+    
+    console.log(`Direct parser found ${choices.length} choices:`, choices);
+    
+    return {
+      nodeId,
+      title,
+      text,
+      choices
+    };
+  } catch (error) {
+    console.error(`Error in direct parser for node ${nodeId}:`, error);
+    return {
+      nodeId,
+      title: 'Error Parsing',
+      text: `Error: ${error.message}`,
+      choices: []
+    };
+  }
+}
+
 // Hardcoded story nodes as a fallback
 const HARDCODED_NODES = {
   "start": START_NODE,
@@ -313,10 +410,13 @@ const StoryGame = () => {
     // First try: Use hardcoded content if available
     if (HARDCODED_NODES[nodeId]) {
       console.log(`Using hardcoded content for ${nodeId}`);
-      const content = parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
-      console.log("Parsed hardcoded content:", content);
+      
+      // Use the direct parser for simplicity and reliability
+      const content = directChoiceParser(nodeId, HARDCODED_NODES[nodeId]);
+      console.log("Parsed content:", content);
+      
       if (content && content.choices) {
-        console.log("Choices:", content.choices);
+        console.log("Choices ready for rendering:", content.choices);
       }
       return content;
     }
