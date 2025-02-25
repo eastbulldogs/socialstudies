@@ -242,6 +242,10 @@ const StoryGame = () => {
       let response = null;
       let successPath = null;
       
+      // Debug output
+      console.log('Loading story node:', nodeId);
+      console.log('Possible paths:', possiblePaths);
+      
       // Try each path until one works
       for (const path of possiblePaths) {
         console.log(`Trying path: ${path}`);
@@ -431,10 +435,13 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
   }
 
   if (errorMessage) {
-    return React.createElement('div', { className: 'error' }, 
+    return       React.createElement('div', { key: 'error' }, 
       `Error: ${errorMessage}`,
       React.createElement('button', {
-        onClick: resetGame,
+        onClick: () => {
+          resetGame();
+          setErrorMessage('');
+        },
         className: 'reset-button',
         style: { marginTop: '20px' }
       }, 'Return to Start')
