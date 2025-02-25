@@ -14,6 +14,7 @@ timeline test 2
 [Interactive History Timeline](/pages/timeline)
 
 [Choose Your Own Adventure - Become a knight!](/games/knight-adventure.html)
+
 <style>
   body {
     background: linear-gradient(135deg, #004225 0%, #006400 100%);
