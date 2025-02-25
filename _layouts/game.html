@@ -95,7 +95,76 @@ You follow his gaze to a stall where a young, spirited horse is pawing at the gr
     knowledge:
       - "Stable Safety Protocols"
     relationships:
-      - "Thomas (Stable Master) - Respect for Caution"`
+      - "Thomas (Stable Master) - Respect for Caution"`,
+  
+  "b2": `---
+node_id: b2
+title: The Kitchen
+---
+
+The warmth hits you first as you enter the castle kitchen, along with the rich aroma of fresh bread and herbs. Agnes, the head cook, is a stout woman with flour-dusted hands and sharp eyes that miss nothing. She pauses in her work at a large wooden table as Master Geoffrey makes introductions.
+
+"Another pair of hands, eh?" she says, looking you over. "Well, timing couldn't be better. We've got a feast to prepare for tonight - Lord Edmund's returning from his travels." She gestures to the organized chaos around you, where kitchen boys and scullery maids hurry about their tasks.
+
+"But first," she continues, lowering her voice, "we've got a more pressing matter. Someone's been taking extra food from the pantry - not much, mind you, but enough to notice. This morning, I saw a boy about your age sneaking away from the kitchen with a loaf of bread under his shirt."
+
+[choices]
+- text: "I could help you catch the thief and report them."
+  next: c3
+  rewards:
+    character_traits:
+      - "Dutiful"
+    knowledge:
+      - "Kitchen Security Protocols"
+    relationships:
+      - "Agnes (Head Cook) - Earned Trust"
+
+- text: "Maybe we should find out why they're taking the food first? They might be hungry."
+  next: c4
+  rewards:
+    character_traits:
+      - "Compassionate"
+      - "Diplomatic"
+    knowledge:
+      - "Castle Social Structure"`,
+  
+  "b3": `---
+node_id: b3
+title: Assist Messenger
+---
+
+"Keep up!" calls Thomas, the young messenger who's showing you the ropes. You jog behind him, trying to memorize the twisting corridors and hidden passages of Blackthorn Castle. Thomas seems to know every shortcut, every guard post, and every squeaky floorboard to avoid.
+
+"A good messenger is like a ghost in the castle walls," he explains, leading you up a narrow servant's staircase. "We see everything but stay invisible." Throughout the day, you help deliver messages to what feels like every corner of the castle – from the knight's quarters to the lord's solar, from the guard towers to the deepest cellars.
+
+You're learning fast. Already you can tell the difference between a regular guard patrol and the captain's inspection rounds. You know which corridors to use during meal times to avoid the rush of servants, and which windows provide the quickest views of approaching visitors.
+
+As the sun begins to set, Thomas hands you a sealed message to deliver to the castle steward. "Last task of the day," he says. "Remember – third door past the tapestry of the hunting scene." But as you take the message, you notice something odd. There's a second piece of parchment stuck to the back, partially hidden, with what looks like a coded message written in charcoal.
+
+[choices]
+- text: "Read the hidden message, since it might be important for the castle's safety"
+  next: c5
+  rewards:
+    skills: 
+      - "Information Gathering"
+    character_traits:
+      - "Curiosity"
+    knowledge:
+      - "Coded Messages"
+    relationships:
+      - "Thomas (Messenger) - Potential Tension"
+
+- text: "Stay loyal to the messenger's code and deliver the message without prying"
+  next: c6
+  rewards:
+    skills: 
+      - "Discretion"
+    character_traits:
+      - "Integrity"
+    knowledge:
+      - "Messenger's Ethical Code"
+    relationships:
+      - "Thomas (Messenger) - Trust"`
 };
 
 const StoryGame = () => {
@@ -402,9 +471,11 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
     }
   };
 
-  const resetGame = async () => {
+  const resetGame = () => {
+    console.log("Resetting game...");
     setCurrentNode('start');
     setHistory([]);
+    setErrorMessage('');
     setJournal({
       skills: [],
       relationships: [],
