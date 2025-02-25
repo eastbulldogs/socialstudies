@@ -23,9 +23,7 @@ layout: default
 
 <!-- Game Component -->
 <script>
-// Hardcoded story nodes as a fallback
-const HARDCODED_NODES = {
-  "start": `---
+const START_NODE = `---
 node_id: start
 title: Begin Your Journey as a Page
 ---
@@ -61,7 +59,12 @@ He points to three directions:
     skills: 
       - "Castle Geography"
     character_traits:
-      - "Inquisitive"`,
+      - "Inquisitive"
+`;
+
+// Hardcoded story nodes as a fallback
+const HARDCODED_NODES = {
+  "start": START_NODE,
   
   "b1": `---
 node_id: b1
@@ -168,7 +171,6 @@ As the sun begins to set, Thomas hands you a sealed message to deliver to the ca
 };
 
 const StoryGame = () => {
-  // Function to parse story content from markdown text
   const parseStoryContent = (nodeId, markdownText) => {
     try {
       console.log(`Parsing content for node: ${nodeId}`);
@@ -217,11 +219,19 @@ const StoryGame = () => {
       let inRewards = false;
       let currentRewardCategory = null;
       
+      // Debug output for choices section
+      console.log("Choice section starts at line:", mainContentEnd);
+      if (mainContentEnd < lines.length) {
+        console.log("Choice section lines:", lines.slice(mainContentEnd, lines.length));
+      }
+      
       for (let i = mainContentEnd; i < lines.length; i++) {
         const line = lines[i].trim();
+        console.log(`Processing line ${i}: "${line}"`);
         
         if (line === '[choices]') {
           inChoices = true;
+          console.log("Found [choices] marker, entering choices section");
           continue;
         }
         
@@ -230,11 +240,15 @@ const StoryGame = () => {
         if (line.startsWith('- text:')) {
           // Start a new choice
           if (currentChoice) {
+            console.log("Adding choice:", currentChoice);
             choices.push(currentChoice);
           }
           
+          const choiceText = line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1');
+          console.log(`Creating new choice with text: "${choiceText}"`);
+          
           currentChoice = {
-            text: line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1'),
+            text: choiceText,
             next: null, // Initialize with null to prevent undefined errors
             rewards: {}
           };
@@ -244,9 +258,11 @@ const StoryGame = () => {
             // Extract the next value, make sure it's not empty
             const nextValue = line.substring('  next:'.length).trim();
             currentChoice.next = nextValue || null;
+            console.log(`Set next: "${nextValue}" for choice "${currentChoice.text}"`);
           }
         } else if (line.startsWith('  rewards:')) {
           inRewards = true;
+          console.log("Entering rewards section");
         } else if (inRewards && line.startsWith('    ')) {
           // Inside rewards section
           if (line.endsWith(':')) {
@@ -255,12 +271,14 @@ const StoryGame = () => {
             if (!currentChoice.rewards[currentRewardCategory]) {
               currentChoice.rewards[currentRewardCategory] = [];
             }
+            console.log(`Set reward category: "${currentRewardCategory}"`);
           } else if (line.startsWith('      -') && currentRewardCategory) {
             // This is a reward item
             const rewardValue = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
             // Only add non-empty rewards
             if (rewardValue && rewardValue !== '""' && rewardValue !== "''") {
               currentChoice.rewards[currentRewardCategory].push(rewardValue);
+              console.log(`Added reward: "${rewardValue}" to category "${currentRewardCategory}"`);
             }
           }
         }
@@ -268,14 +286,17 @@ const StoryGame = () => {
       
       // Add the last choice if there is one
       if (currentChoice) {
+        console.log("Adding final choice:", currentChoice);
         choices.push(currentChoice);
       }
+      
+      console.log("Choices processed:", choices);
       
       return {
         nodeId: nodeId,
         title: frontmatter.title || '',
         text: mainContent,
-        choices: choices.length > 0 ? choices : null
+        choices: choices.length > 0 ? choices : []
       };
     } catch (error) {
       console.error(`Error parsing story content for node ${nodeId}:`, error);
@@ -292,7 +313,12 @@ const StoryGame = () => {
     // First try: Use hardcoded content if available
     if (HARDCODED_NODES[nodeId]) {
       console.log(`Using hardcoded content for ${nodeId}`);
-      return parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
+      const content = parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
+      console.log("Parsed hardcoded content:", content);
+      if (content && content.choices) {
+        console.log("Choices:", content.choices);
+      }
+      return content;
     }
     
     // Try loading from file (this might not work on GitHub Pages due to path issues)
@@ -544,13 +570,14 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
       }),
       storyContent.choices && storyContent.choices.length > 0 ? 
         React.createElement('div', { key: 'choices', className: 'choice-container' }, 
-          storyContent.choices.map((choice, index) => 
-            React.createElement('button', {
+          storyContent.choices.map((choice, index) => {
+            console.log(`Rendering choice ${index}:`, choice);
+            return React.createElement('button', {
               key: `choice-${index}`,
               onClick: () => handleChoice(choice),
               className: 'choice-button'
-            }, choice.text)
-          )
+            }, choice.text);
+          })
         ) : (
           // End of story node - display a message if there are no choices
           React.createElement('div', { key: 'story-end', className: 'story-end' },
