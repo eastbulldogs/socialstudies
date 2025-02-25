@@ -1,3 +1,58 @@
 ---
 layout: game
 ---
+
+<div id="debug-controls" style="margin: 20px; padding: 15px; background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 8px;">
+  <h3 style="margin-top: 0;">Debug Controls</h3>
+  <button id="debugStart" style="background: #4299e1; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+    Force Start Node
+  </button>
+  <button id="showDebugPanel" style="background: #718096; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+    Show Debug Panel
+  </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Force start node button
+  document.getElementById('debugStart').addEventListener('click', function() {
+    // Access the game's React component state and set it directly
+    const gameRoot = document.getElementById('story-game-root');
+    if (gameRoot && gameRoot._reactRootContainer) {
+      try {
+        console.log("Attempting to force reset game...");
+        
+        // Find the React component instance
+        const rootInstance = gameRoot._reactRootContainer._internalRoot.current;
+        if (rootInstance && rootInstance.child && rootInstance.child.stateNode) {
+          const gameComponent = rootInstance.child.stateNode;
+          
+          // Call the reset function if it exists
+          if (typeof gameComponent.resetGame === 'function') {
+            gameComponent.resetGame();
+            console.log("Game reset triggered");
+          } else {
+            console.log("resetGame function not found");
+          }
+        } else {
+          console.log("React component structure not as expected");
+        }
+      } catch (e) {
+        console.error("Error accessing React component:", e);
+      }
+    } else {
+      console.log("Game root or React container not found");
+      // Fallback: Reload the page
+      window.location.reload();
+    }
+  });
+  
+  // Show debug panel button
+  document.getElementById('showDebugPanel').addEventListener('click', function() {
+    const debugPanel = document.getElementById('debug-panel');
+    if (debugPanel) {
+      debugPanel.style.display = 'block';
+    }
+  });
+});
+</script>
