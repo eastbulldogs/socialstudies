@@ -185,8 +185,11 @@ const StoryGame = () => {
             }
           } else if (line.startsWith('      -') && currentRewardCategory) {
             // This is a reward item
-            const rewardItem = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
-            currentChoice.rewards[currentRewardCategory].push(rewardItem);
+            const rewardValue = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
+            // Only add non-empty rewards
+            if (rewardValue && rewardValue !== '""' && rewardValue !== "''") {
+              currentChoice.rewards[currentRewardCategory].push(rewardValue);
+            }
           }
         }
       }
@@ -204,6 +207,8 @@ const StoryGame = () => {
       };
     } catch (error) {
       console.error(`Error parsing story content for node ${nodeId}:`, error);
+      document.getElementById('error-details').textContent = `Parser error: ${error.message}`;
+      document.getElementById('debug-panel').style.display = 'block';
       return null;
     }
   };
@@ -222,13 +227,13 @@ const StoryGame = () => {
     try {
       // Try different possible path patterns for GitHub Pages
       const possiblePaths = [
-        `/socialstudies/_data/story/nodes/${nodeId}.md`,
-        `/socialstudies/data/story/nodes/${nodeId}.md`,
-        `/_data/story/nodes/${nodeId}.md`,
-        `/data/story/nodes/${nodeId}.md`,
-        `/story/nodes/${nodeId}.md`,
-        `/nodes/${nodeId}.md`,
-        `/${nodeId}.md`
+        `/_data/story/nodes/${nodeId}.md`,        // Most likely path based on your structure
+        `/data/story/nodes/${nodeId}.md`,         // Alternative without leading underscore
+        `/story/nodes/${nodeId}.md`,              // Another possible variation
+        `/nodes/${nodeId}.md`,                    // Shortened path
+        `/${nodeId}.md`,                          // Root path (least likely)
+        `/socialstudies/_data/story/nodes/${nodeId}.md`,  // With potential prefix
+        `/socialstudies/data/story/nodes/${nodeId}.md`    // Alternative with prefix
       ];
       
       let response = null;
@@ -253,26 +258,38 @@ const StoryGame = () => {
         }
       }
       
+      // If we successfully loaded content
       if (response) {
         return parseStoryContent(nodeId, response);
-      } else {
-        throw new Error("Could not load content from any path");
-      }
+      } 
+      
+      // No content loaded, throw error to trigger fallback
+      throw new Error(`Could not load content for node "${nodeId}" from any path. Check that the file exists in _data/story/nodes/ folder.`);
+      
     } catch (error) {
       console.error(`Error loading story node ${nodeId}:`, error);
       document.getElementById('error-details').textContent = error.message;
       document.getElementById('debug-panel').style.display = 'block';
       
-      // Return fallback error node
+      // Check if this node has a fallback first
+      if (HARDCODED_NODES[nodeId]) {
+        return parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
+      }
+      
+      // Return generic fallback error node
       return {
         nodeId: nodeId,
-        title: 'Using Fallback Content',
-        text: `The story node "${nodeId}" has been loaded from our backup content.
+        title: 'Node Not Found',
+        text: `The story node "${nodeId}" could not be loaded. This might be because:
 
-If you're a student: Enjoy the adventure! Your teacher is working to make this even better.
+1. The file doesn't exist yet in your _data/story/nodes/ folder
+2. There might be a path issue in your GitHub Pages setup
+3. The link from the previous node might have a typo
 
-If you're the teacher: If you'd like to customize this content, you can edit the HARDCODED_NODES object in the game layout file.`,
-        choices: HARDCODED_NODES[nodeId] ? parseStoryContent(nodeId, HARDCODED_NODES[nodeId]).choices : []
+If you're a student: Please let your teacher know about this issue! In the meantime, you can go back and try a different path.
+
+If you're the teacher: You'll need to create a file named "${nodeId}.md" in your _data/story/nodes/ folder. You can also add this node to the HARDCODED_NODES object in the game layout file for immediate testing.`,
+        choices: []
       };
     }
   };
@@ -288,16 +305,26 @@ If you're the teacher: If you'd like to customize this content, you can edit the
     items: [],
     character_traits: []
   });
+  const [errorMessage, setErrorMessage] = React.useState('');
 
   // Load content when the current node changes
   React.useEffect(() => {
     const fetchContent = async () => {
       setLoading(true);
-      const content = await loadStoryContent(currentNode);
-      if (content) {
-        setStoryContent(content);
+      setErrorMessage('');
+      try {
+        const content = await loadStoryContent(currentNode);
+        if (content) {
+          setStoryContent(content);
+        } else {
+          setErrorMessage(`Failed to load node: ${currentNode}`);
+        }
+      } catch (error) {
+        console.error("Error in fetchContent:", error);
+        setErrorMessage(`Error: ${error.message}`);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     
     fetchContent();
@@ -314,6 +341,7 @@ If you're the teacher: If you'd like to customize this content, you can edit the
           const parsedContent = parseStoryContent(currentNode, content);
           if (parsedContent) {
             setStoryContent(parsedContent);
+            document.getElementById('debug-panel').style.display = 'none';
           }
         }
       });
@@ -333,8 +361,9 @@ If you're the teacher: If you'd like to customize this content, you can edit the
         Object.entries(choice.rewards).forEach(([category, items]) => {
           if (Array.isArray(items) && items.length > 0) {
             if (!newJournal[category]) newJournal[category] = [];
-            // Add unique items only
-            newJournal[category] = [...new Set([...newJournal[category], ...items])];
+            // Add unique items only and filter out empty strings
+            const filteredItems = items.filter(item => item && item.trim() !== '');
+            newJournal[category] = [...new Set([...newJournal[category], ...filteredItems])];
           }
         });
         
@@ -386,11 +415,32 @@ If you're the teacher: If you'd like to customize this content, you can edit the
   };
 
   if (loading) {
-    return React.createElement('div', { className: 'loading' }, 'Loading story...');
+    return React.createElement('div', { className: 'loading' }, 
+      React.createElement('div', { className: 'spinner' }),
+      'Loading story...'
+    );
+  }
+
+  if (errorMessage) {
+    return React.createElement('div', { className: 'error' }, 
+      `Error: ${errorMessage}`,
+      React.createElement('button', {
+        onClick: resetGame,
+        className: 'reset-button',
+        style: { marginTop: '20px' }
+      }, 'Return to Start')
+    );
   }
 
   if (!storyContent) {
-    return React.createElement('div', { className: 'error' }, 'Error loading story content');
+    return React.createElement('div', { className: 'error' }, 
+      'Could not load story content',
+      React.createElement('button', {
+        onClick: resetGame,
+        className: 'reset-button',
+        style: { marginTop: '20px' }
+      }, 'Return to Start')
+    );
   }
 
   return React.createElement('div', { className: 'game-container' }, [
@@ -403,17 +453,27 @@ If you're the teacher: If you'd like to customize this content, you can edit the
         storyContent.title
       ),
       React.createElement('div', { key: 'story', className: 'story-text', 
-        dangerouslySetInnerHTML: { __html: storyContent.text }
+        dangerouslySetInnerHTML: { __html: storyContent.text.replace(/\n/g, '<br>') }
       }),
-      storyContent.choices && React.createElement('div', { key: 'choices', className: 'choice-container' }, 
-        storyContent.choices.map((choice, index) => 
-          React.createElement('button', {
-            key: `choice-${index}`,
-            onClick: () => handleChoice(choice),
-            className: 'choice-button'
-          }, choice.text)
-        )
-      ),
+      storyContent.choices && storyContent.choices.length > 0 ? 
+        React.createElement('div', { key: 'choices', className: 'choice-container' }, 
+          storyContent.choices.map((choice, index) => 
+            React.createElement('button', {
+              key: `choice-${index}`,
+              onClick: () => handleChoice(choice),
+              className: 'choice-button'
+            }, choice.text)
+          )
+        ) : (
+          // End of story node - display a message if there are no choices
+          React.createElement('div', { key: 'story-end', className: 'story-end' },
+            React.createElement('p', {}, "You've reached the end of this path of your adventure."),
+            React.createElement('button', {
+              onClick: resetGame,
+              className: 'reset-button'
+            }, 'Start a New Journey')
+          )
+        ),
       React.createElement('div', { key: 'game-controls', className: 'game-controls' }, [
         history.length > 0 && React.createElement('button', {
           key: 'back-button',
@@ -604,6 +664,25 @@ ReactDOM.render(
   padding: 2rem;
   font-size: 1.2rem;
   color: #4a5568;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3182ce;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error {
@@ -611,6 +690,17 @@ ReactDOM.render(
   padding: 2rem;
   color: #e53e3e;
   font-size: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.story-end {
+  text-align: center;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin-bottom: 50px;
 }
 
 .journal-section {
