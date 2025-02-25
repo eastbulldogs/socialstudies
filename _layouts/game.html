@@ -13,50 +13,143 @@ const StoryGame = () => {
   // Function to parse story content from markdown
   const parseStoryContent = async (nodeId) => {
     try {
-      const response = await fetch(`/_data/story/nodes/${nodeId}.md`)
-        .then(response => response.text());
+      console.log(`Attempting to load node: ${nodeId}`);
+      // Try to fetch the node file using the correct path structure
+      const response = await fetch(`/socialstudies/_data/story/nodes/${nodeId}.md`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch node ${nodeId}: ${response.status}`);
+          }
+          return response.text();
+        });
+      
+      console.log(`Successfully loaded node: ${nodeId}`);
       const lines = response.split('\n');
       
+      // Find frontmatter boundaries (---) 
+      let frontmatterStart = -1;
+      let frontmatterEnd = -1;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '---') {
+          if (frontmatterStart === -1) {
+            frontmatterStart = i;
+          } else {
+            frontmatterEnd = i;
+            break;
+          }
+        }
+      }
+      
+      if (frontmatterStart === -1 || frontmatterEnd === -1) {
+        console.error('Error: Could not find frontmatter in markdown file');
+        return null;
+      }
+      
       // Parse frontmatter
-      const frontmatterStart = lines.findIndex(line => line.trim() === '---');
-      const frontmatterEnd = lines.slice(frontmatterStart + 1).findIndex(line => line.trim() === '---') + frontmatterStart + 1;
       const frontmatter = {};
       lines.slice(frontmatterStart + 1, frontmatterEnd).forEach(line => {
-        const [key, value] = line.split(': ').map(s => s.trim());
-        frontmatter[key] = value;
+        if (line.includes(':')) {
+          const [key, ...valueParts] = line.split(':');
+          const value = valueParts.join(':').trim();
+          frontmatter[key.trim()] = value;
+        }
       });
       
-      // Get main content
-      const mainContent = lines.slice(frontmatterEnd + 1).join('\n').trim();
+      // Get main content (everything between frontmatter and [choices] section)
+      let mainContentEnd = lines.findIndex(line => line.trim() === '[choices]');
+      if (mainContentEnd === -1) mainContentEnd = lines.length;
       
-      // Parse choices
+      const mainContent = lines.slice(frontmatterEnd + 1, mainContentEnd).join('\n').trim();
+      
+      // Parse choices section
       const choices = [];
-      const choiceLines = mainContent.split('\n').filter(line => line.startsWith('- '));
-      choiceLines.forEach(line => {
-        const text = line.substring(2);
-        const next = text.match(/\[([^\]]+)\]/)?.[1];
-        choices.push({
-          text: text.replace(/\[([^\]]+)\]/, '').trim(),
-          next,
-          rewards: {} // You can add rewards parsing if needed
-        });
-      });
+      let currentChoice = null;
+      let inChoices = false;
+      let inRewards = false;
+      let currentRewardCategory = null;
+      
+      for (let i = mainContentEnd; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (line === '[choices]') {
+          inChoices = true;
+          continue;
+        }
+        
+        if (!inChoices) continue;
+        
+        if (line.startsWith('- text:')) {
+          // Start a new choice
+          if (currentChoice) {
+            choices.push(currentChoice);
+          }
+          
+          currentChoice = {
+            text: line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1'),
+            rewards: {}
+          };
+          inRewards = false;
+        } else if (line.startsWith('  next:')) {
+          if (currentChoice) {
+            currentChoice.next = line.substring('  next:'.length).trim();
+          }
+        } else if (line.startsWith('  rewards:')) {
+          inRewards = true;
+        } else if (inRewards && line.startsWith('    ')) {
+          // Inside rewards section
+          if (line.endsWith(':')) {
+            // This is a category like "skills:"
+            currentRewardCategory = line.trim().slice(0, -1);
+            if (!currentChoice.rewards[currentRewardCategory]) {
+              currentChoice.rewards[currentRewardCategory] = [];
+            }
+          } else if (line.startsWith('      -') && currentRewardCategory) {
+            // This is a reward item
+            const rewardItem = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
+            currentChoice.rewards[currentRewardCategory].push(rewardItem);
+          }
+        }
+      }
+      
+      // Add the last choice if there is one
+      if (currentChoice) {
+        choices.push(currentChoice);
+      }
       
       return {
+        nodeId: nodeId,
         title: frontmatter.title || '',
-        text: mainContent.split('\n- ')[0].trim(),
+        text: mainContent,
         choices: choices.length > 0 ? choices : null
       };
     } catch (error) {
       console.error(`Error loading story node ${nodeId}:`, error);
-      console.error('File path attempted:', `/data/story/nodes/${nodeId}.md`);
-      return null;
+      console.error('File path attempted:', `/socialstudies/_data/story/nodes/${nodeId}.md`);
+      
+      // If there's an error, show a debugging view with helpful information
+      return {
+        nodeId: nodeId,
+        title: 'Error Loading Node',
+        text: `Could not load node "${nodeId}". Error details: ${error.message}
+
+Troubleshooting tips:
+1. Check if the file exists at /socialstudies/_data/story/nodes/${nodeId}.md
+2. Verify that the file has proper frontmatter (--- sections)
+3. Check your browser console for more details`,
+        choices: [{
+          text: 'Go back to start',
+          next: 'start',
+          rewards: {}
+        }]
+      };
     }
   };
 
-  const [currentNode, setCurrentNode] = React.useState('start');
+  const [currentNode, setCurrentNode] = React.useState('start'); // Start with start.md
   const [storyContent, setStoryContent] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const [history, setHistory] = React.useState([]);
   const [journal, setJournal] = React.useState({
     skills: [],
     relationships: [],
@@ -76,33 +169,51 @@ const StoryGame = () => {
     };
     
     loadInitialContent();
-  }, []);
+  }, [currentNode]);
 
   const handleChoice = async (choice) => {
+    // Add current node to history before moving
+    setHistory(prev => [...prev, currentNode]);
+    
     // Update journal with rewards
     if (choice.rewards) {
       setJournal(prev => {
         const newJournal = { ...prev };
+        
+        // Process each reward category
         Object.entries(choice.rewards).forEach(([category, items]) => {
-          if (!newJournal[category]) newJournal[category] = [];
-          newJournal[category] = [...new Set([...newJournal[category], ...items])];
+          if (Array.isArray(items) && items.length > 0) {
+            if (!newJournal[category]) newJournal[category] = [];
+            // Add unique items only
+            newJournal[category] = [...new Set([...newJournal[category], ...items])];
+          }
         });
+        
         return newJournal;
       });
     }
 
-    // Update current node
-    setCurrentNode(choice.next);
-    
-    // Load and update story content from file
-    const newContent = await parseStoryContent(choice.next);
-    if (newContent) {
-      setStoryContent(newContent);
+    // Update current node - make sure the nodeId is lowercase to match your file naming
+    const nextNode = choice.next.toLowerCase();
+    setCurrentNode(nextNode);
+  };
+  
+  const goBack = () => {
+    if (history.length > 0) {
+      // Get the last node from history
+      const previousNode = history[history.length - 1];
+      
+      // Remove the last node from history
+      setHistory(prev => prev.slice(0, -1));
+      
+      // Set current node to previous node
+      setCurrentNode(previousNode);
     }
   };
 
   const resetGame = async () => {
     setCurrentNode('start');
+    setHistory([]);
     setJournal({
       skills: [],
       relationships: [],
@@ -110,10 +221,6 @@ const StoryGame = () => {
       items: [],
       character_traits: []
     });
-    const content = await parseStoryContent('start');
-    if (content) {
-      setStoryContent(content);
-    }
   };
 
   // Journal Section Component
@@ -140,12 +247,15 @@ const StoryGame = () => {
   return React.createElement('div', { className: 'game-container' }, [
     // Main story section
     React.createElement('div', { key: 'story-section', className: 'story-section' }, [
+      React.createElement('div', { key: 'node-id', className: 'node-id' },
+        `Node: ${storyContent.nodeId}`
+      ),
       React.createElement('h2', { key: 'title', className: 'game-title' }, 
         storyContent.title
       ),
-      React.createElement('p', { key: 'story', className: 'story-text' }, 
-        storyContent.text
-      ),
+      React.createElement('div', { key: 'story', className: 'story-text', 
+        dangerouslySetInnerHTML: { __html: storyContent.text }
+      }),
       storyContent.choices && React.createElement('div', { key: 'choices', className: 'choice-container' }, 
         storyContent.choices.map((choice, index) => 
           React.createElement('button', {
@@ -155,11 +265,18 @@ const StoryGame = () => {
           }, choice.text)
         )
       ),
-      React.createElement('button', {
-        key: 'reset-button',
-        onClick: resetGame,
-        className: 'reset-button'
-      }, 'Start Over')
+      React.createElement('div', { key: 'game-controls', className: 'game-controls' }, [
+        history.length > 0 && React.createElement('button', {
+          key: 'back-button',
+          onClick: goBack,
+          className: 'back-button'
+        }, 'Go Back'),
+        React.createElement('button', {
+          key: 'reset-button',
+          onClick: resetGame,
+          className: 'reset-button'
+        }, 'Start Over')
+      ])
     ]),
     
     // Journal section
@@ -173,9 +290,9 @@ const StoryGame = () => {
         items: journal.skills 
       }),
       React.createElement(JournalSection, { 
-        key: 'relationships',
-        title: 'Relationships',
-        items: journal.relationships 
+        key: 'character_traits',
+        title: 'Character Traits',
+        items: journal.character_traits 
       }),
       React.createElement(JournalSection, { 
         key: 'knowledge',
@@ -183,14 +300,14 @@ const StoryGame = () => {
         items: journal.knowledge 
       }),
       React.createElement(JournalSection, { 
+        key: 'relationships',
+        title: 'Relationships',
+        items: journal.relationships 
+      }),
+      React.createElement(JournalSection, { 
         key: 'items',
         title: 'Items Acquired',
         items: journal.items 
-      }),
-      React.createElement(JournalSection, { 
-        key: 'character_traits',
-        title: 'Character Traits',
-        items: journal.character_traits 
       })
     ])
   ]);
@@ -211,6 +328,7 @@ ReactDOM.render(
   gap: 20px;
   padding: 20px;
   min-height: 600px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .story-section {
@@ -232,6 +350,18 @@ ReactDOM.render(
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   max-height: 80vh;
   overflow-y: auto;
+  border: 1px solid #e2e8f0;
+}
+
+.node-id {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 12px;
+  color: #718096;
+  background: #f7fafc;
+  padding: 3px 8px;
+  border-radius: 4px;
   border: 1px solid #e2e8f0;
 }
 
@@ -282,6 +412,29 @@ ReactDOM.render(
   background: #2d3748;
 }
 
+.game-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.back-button {
+  background: #3182ce;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #2c5282;
+}
+
 .reset-button {
   background: #e53e3e;
   color: white;
@@ -291,9 +444,6 @@ ReactDOM.render(
   cursor: pointer;
   font-size: 14px;
   transition: background 0.2s;
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
 }
 
 .reset-button:hover {
@@ -361,3 +511,4 @@ ReactDOM.render(
     padding: 10px 16px;
   }
 }
+</style>
