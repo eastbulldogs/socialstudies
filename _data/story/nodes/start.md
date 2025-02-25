@@ -1,14 +1,37 @@
 ---
 node_id: start
-title: Arrival at the Castle
+title: Begin Your Journey as a Page
 ---
 
-The towering stone walls of Castle Blackmoor rise before you, their weathered surface telling tales of centuries gone by. As a twelve-year-old boy seeking to begin your journey to knighthood, your heart pounds with excitement and nervousness. The morning mist still clings to the ground, and the bustling sounds of castle life echo from beyond the gates.
+The year is 1328. You're a young lad of twelve, and today marks your first day as a page at Castle Hawksworth. You've dreamed of becoming a knight since you were old enough to hold a wooden sword, and now your journey begins.
 
-Master Geoffrey, the castle steward who brought you here, turns to you with a stern but not unkind expression. "Well, lad, this is where your journey begins. We need all hands today - where would you like to start?"
+Master Geoffrey, a stern but fair knight with graying hair at his temples, leads you through the massive stone walls of the castle. The bustle of castle life surrounds you - servants carrying baskets, guards patrolling, and nobles in fine clothing walking the grounds.
 
-You can see stable boys leading horses near the western wall, while kitchen smoke rises from the eastern tower. A messenger boy your age is also sorting through scrolls by the gatehouse.
+"Every knight must first master various skills and understand castle life," Master Geoffrey explains. "Today, you'll begin your training by helping in one area of the castle. This choice will start shaping your path."
 
-- [I'd like to help in the stables - I've always loved horses.] [b1]
-- [The kitchen seems interesting - I could learn about castle life there.] [b2]
-- [Maybe I could help the messenger - I'd like to learn my way around.] [b3]
+He points to three directions:
+
+[choices]
+- text: "I'll help in the stables - I've always had a way with horses."
+  next: b1
+  rewards:
+    skills: 
+      - "Basic Horse Care"
+    character_traits:
+      - "Diligent"
+
+- text: "I'll assist in the kitchen - I'm curious about castle provisions."
+  next: b2
+  rewards:
+    skills: 
+      - "Basic Food Preparation"
+    character_traits:
+      - "Observant"
+
+- text: "I'll work with the messengers - I want to learn the castle layout."
+  next: b3
+  rewards:
+    skills: 
+      - "Castle Geography"
+    character_traits:
+      - "Inquisitive"
