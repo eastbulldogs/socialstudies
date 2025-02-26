@@ -23,7 +23,9 @@ layout: default
 
 <!-- Game Component -->
 <script>
-const START_NODE = `---
+// Hardcoded story nodes as a fallback
+const HARDCODED_NODES = {
+  "start": `---
 node_id: start
 title: Begin Your Journey as a Page
 ---
@@ -59,109 +61,7 @@ He points to three directions:
     skills: 
       - "Castle Geography"
     character_traits:
-      - "Inquisitive"
-`;
-
-// Include the direct choice parser
-/**
- * A simplified, direct parser for story content with a focus on correctly parsing choices
- */
-function directChoiceParser(nodeId, markdownText) {
-  console.log(`Direct parsing for node: ${nodeId}`);
-  
-  try {
-    // Split content into sections
-    const parts = markdownText.split('[choices]');
-    if (parts.length !== 2) {
-      console.error('Could not find [choices] section in markdown');
-      return {
-        nodeId,
-        title: 'Error Parsing Content',
-        text: 'Could not find choices section.',
-        choices: []
-      };
-    }
-    
-    // Get the content part (everything before [choices])
-    const contentPart = parts[0];
-    
-    // Get the choices part (everything after [choices])
-    const choicesPart = parts[1];
-    
-    // Extract frontmatter
-    const frontmatterMatch = contentPart.match(/---\s+([\s\S]*?)\s+---/);
-    let title = '';
-    
-    if (frontmatterMatch && frontmatterMatch[1]) {
-      const frontmatterLines = frontmatterMatch[1].split('\n');
-      for (const line of frontmatterLines) {
-        if (line.startsWith('title:')) {
-          title = line.substring('title:'.length).trim();
-          break;
-        }
-      }
-    }
-    
-    // Extract main content (between frontmatter and choices)
-    let text = '';
-    if (frontmatterMatch) {
-      text = contentPart.substring(frontmatterMatch[0].length).trim();
-    } else {
-      text = contentPart.trim();
-    }
-    
-    // Parse choices using a more direct regex approach
-    const choices = [];
-    
-    // Match each choice block
-    const choiceBlocks = choicesPart.split(/(?=\s*-\s*text:)/g);
-    
-    for (const block of choiceBlocks) {
-      if (!block.trim()) continue;
-      
-      // Extract text
-      const textMatch = block.match(/\s*-\s*text:\s*"?([^"\n]+)"?/);
-      if (!textMatch) continue;
-      
-      const choice = {
-        text: textMatch[1].trim(),
-        next: null,
-        rewards: {}
-      };
-      
-      // Extract next
-      const nextMatch = block.match(/\s+next:\s*([^\s\n]+)/);
-      if (nextMatch) {
-        choice.next = nextMatch[1].trim();
-        console.log(`Direct parser found next: "${choice.next}" for choice: "${choice.text}"`);
-      }
-      
-      // Add the choice
-      choices.push(choice);
-    }
-    
-    console.log(`Direct parser found ${choices.length} choices:`, choices);
-    
-    return {
-      nodeId,
-      title,
-      text,
-      choices
-    };
-  } catch (error) {
-    console.error(`Error in direct parser for node ${nodeId}:`, error);
-    return {
-      nodeId,
-      title: 'Error Parsing',
-      text: `Error: ${error.message}`,
-      choices: []
-    };
-  }
-}
-
-// Hardcoded story nodes as a fallback
-const HARDCODED_NODES = {
-  "start": START_NODE,
+      - "Inquisitive"`,
   
   "b1": `---
 node_id: b1
@@ -212,6 +112,8 @@ The warmth hits you first as you enter the castle kitchen, along with the rich a
 - text: "I could help you catch the thief and report them."
   next: c3
   rewards:
+    skills: 
+      - ""
     character_traits:
       - "Dutiful"
     knowledge:
@@ -222,152 +124,72 @@ The warmth hits you first as you enter the castle kitchen, along with the rich a
 - text: "Maybe we should find out why they're taking the food first? They might be hungry."
   next: c4
   rewards:
+    skills: 
+      - ""
     character_traits:
       - "Compassionate"
       - "Diplomatic"
     knowledge:
-      - "Castle Social Structure"`,
+      - "Castle Social Structure"
+    relationships:
+      - ""`,
   
-  "c4": `---
-node_id: c4
-title: Help Hungry Child
+  "b3": `---
+node_id: b3
+title: Assist Messenger
 ---
 
-Instead of raising the alarm, you quietly approach the child. "Wait," you whisper, making sure no one else can hear. "I don't want to hurt you. I just want to talk."
+"Keep up!" calls Thomas, the young messenger who's showing you the ropes. You jog behind him, trying to memorize the twisting corridors and hidden passages of Blackthorn Castle. Thomas seems to know every shortcut, every guard post, and every squeaky floorboard to avoid.
 
-The child freezes, clutching a small bundle of salted meat to their chest. You can see now it's a girl about your age, her clothes worn but clean. Her eyes dart toward the exit, but something in your voice makes her hesitate.
+"A good messenger is like a ghost in the castle walls," he explains, leading you up a narrow servant's staircase. "We see everything but stay invisible." Throughout the day, you help deliver messages to what feels like every corner of the castle – from the knight's quarters to the lord's solar, from the guard towers to the deepest cellars.
 
-"My little brother's sick," she says finally, her voice barely a whisper. "We haven't had proper food in days. Father lost his job at the mill, and—" She stops, looking ashamed.
+You're learning fast. Already you can tell the difference between a regular guard patrol and the captain's inspection rounds. You know which corridors to use during meal times to avoid the rush of servants, and which windows provide the quickest views of approaching visitors.
 
-Your mind races back to Marta's earlier lessons about the castle's abundance. "Wait here," you tell her. You quickly gather some of the day's leftover bread and vegetables – food that would have been thrown out anyway. "Take these too. They're fresh, and no one will miss them."
-
-The girl's eyes fill with tears of relief. As she accepts the food, she tells you about a group of village families who help each other survive hard times. They share what little they have, take care of each other's children, and keep each other's spirits up. But they're too proud to ask the castle for help directly.
-
-Just then, you hear footsteps approaching the storage room. You have to make a choice:
+As the sun begins to set, Thomas hands you a sealed message to deliver to the castle steward. "Last task of the day," he says. "Remember – third door past the tapestry of the hunting scene." But as you take the message, you notice something odd. There's a second piece of parchment stuck to the back, partially hidden, with what looks like a coded message written in charcoal.
 
 [choices]
-- text: "Keep the villagers' secret and find quiet ways to help them"
-  next: d7
+- text: "Read the hidden message, since it might be important for the castle's safety"
+  next: c5
   rewards:
-    skills:
-      - "Stealth"
-      - "Resource Distribution"
+    skills: 
+      - "Information Gathering"
     character_traits:
-      - "Compassionate"
-      - "Discreet"
+      - "Curiosity"
     knowledge:
-      - "Village Social Networks"
+      - "Coded Messages"
     relationships:
-      - "Village Girl - Trust and Gratitude"
+      - "Thomas (Messenger) - Potential Tension"
 
-- text: "Tell the castle authorities so they can provide official assistance"
-  next: d8
+- text: "Stay loyal to the messenger's code and deliver the message without prying"
+  next: c6
   rewards:
-    skills:
-      - "Diplomacy"
-      - "Advocacy"
+    skills: 
+      - "Discretion"
     character_traits:
-      - "Honest"
-      - "Community-minded"
+      - "Integrity"
     knowledge:
-      - "Castle Aid Protocols"
+      - "Messenger's Ethical Code"
     relationships:
-      - "Castle Authorities - Recognition"`,
-      
-  "c5": `---
-node_id: c5
-title: Read Message
----
-
-Your hands tremble slightly as you carefully peel back the hidden message. The charcoal writing is faint, but you can make out what looks like a coded message: "New moon. East gate. Silver for silence." Below that are strange symbols that must mean something to whoever wrote them.
-
-The main message to the steward suddenly feels much less important. As you read the hidden note again, pieces start falling into place. Earlier today, you delivered messages to the guard captain about scheduling, and you remember seeing fewer guards assigned to the east gate during the new moon – just two days from now.
-
-Your stomach tightens. Could this be about smuggling? Or something worse? The symbols at the bottom remind you of marks you've seen on some merchants' crates – but these look different, almost like weapons.
-
-Thomas's words from this morning echo in your head: "A good messenger sees everything." Well, you've certainly seen something now. But Thomas also said messengers are trusted with secrets – does that mean you should pretend you never saw this?
-
-You glance out a narrow window and spot a group of unusual merchants in the courtyard, their clothes too fine for simple traders. One of them is staring at the east gate with great interest.
-
-Time feels like it's slipping away, and either choice could have serious consequences for the castle. What's the right thing for a future knight to do?
-
-[choices]
-- text: "Investigate further on your own to uncover the whole plot"
-  next: d9
-  rewards:
-    skills:
-      - "Sleuthing"
-      - "Code Deciphering"
-    character_traits:
-      - "Daring"
-      - "Independent"
-    knowledge:
-      - "Secret Messages"
-    relationships:
-      - "Potential Danger from Conspirators"
-
-- text: "Take the message directly to your messenger mentor for help"
-  next: d10
-  rewards:
-    skills:
-      - "Protocol Following"
-      - "Clear Reporting"
-    character_traits:
-      - "Prudent"
-      - "Responsible"
-    knowledge:
-      - "Chain of Command"
-    relationships:
-      - "Thomas (Mentor) - Increased Trust"`,
-      
-  "c6": `---
-node_id: c6
-title: Stay Loyal
----
-
-Forcing yourself to ignore the hidden message, you carefully deliver both pieces of parchment exactly as they were given to you. Your hands feel sweaty, but you remember Thomas's words about the importance of trust. A messenger who reads private messages won't be trusted with any messages at all.
-
-Just before sunset, you find Thomas waiting in the small messenger's courtyard. His expression is unusually serious. "I saw you notice the second message earlier," he says quietly. "But you delivered it untouched. Not many young ones would have done that."
-
-He leads you to a part of the castle you've never seen before – a small room hidden behind a tapestry. Inside, you're surprised to find not just Thomas, but the castle steward and the captain of the guard. They're studying the very message you delivered.
-
-"We've been watching you all day," the steward explains. "That message was a test. We need messengers we can trust completely – especially now." He exchanges glances with the captain. "We're tracking some dangerous people, and we need someone who can carry messages right under their noses without arousing suspicion."
-
-The captain steps forward. "You've proven you can be trusted. But this won't be easy work. You could stick to regular message duties and train to be a traditional castle messenger. Or you could help us with something more... important."
-
-The three men wait for your answer. Both paths serve the castle – but in very different ways.
-
-[choices]
-- text: "Accept the special mission and join their secret work"
-  next: d11
-  rewards:
-    skills:
-      - "Espionage Basics"
-      - "Covert Communication"
-    character_traits:
-      - "Brave"
-      - "Discreet"
-    knowledge:
-      - "Castle Security Networks"
-    relationships:
-      - "Thomas - Confidant and Handler"
-
-- text: "Focus on your regular messenger training"
-  next: d12
-  rewards:
-    skills:
-      - "Advanced Message Protocols"
-      - "Diplomatic Communication"
-    character_traits:
-      - "Steadfast"
-      - "Traditional"
-    knowledge:
-      - "Castle Hierarchy"
-    relationships:
-      - "Thomas - Proud Mentor"`
+      - "Thomas (Messenger) - Trust"`
 };
 
 const StoryGame = () => {
+  // Debug helper function
+  const debugNodeLoading = (message, details = null) => {
+    console.log(message, details);
+    const debugPanel = document.getElementById('debug-panel');
+    if (debugPanel) {
+      const errorDetails = document.getElementById('error-details');
+      if (errorDetails) {
+        errorDetails.textContent += "\n" + message;
+        if (details) {
+          errorDetails.textContent += ": " + JSON.stringify(details);
+        }
+      }
+    }
+  };
+
+  // Function to parse story content from markdown text
   const parseStoryContent = (nodeId, markdownText) => {
     try {
       console.log(`Parsing content for node: ${nodeId}`);
@@ -416,19 +238,11 @@ const StoryGame = () => {
       let inRewards = false;
       let currentRewardCategory = null;
       
-      // Debug output for choices section
-      console.log("Choice section starts at line:", mainContentEnd);
-      if (mainContentEnd < lines.length) {
-        console.log("Choice section lines:", lines.slice(mainContentEnd, lines.length));
-      }
-      
       for (let i = mainContentEnd; i < lines.length; i++) {
         const line = lines[i].trim();
-        console.log(`Processing line ${i}: "${line}"`);
         
         if (line === '[choices]') {
           inChoices = true;
-          console.log("Found [choices] marker, entering choices section");
           continue;
         }
         
@@ -437,29 +251,20 @@ const StoryGame = () => {
         if (line.startsWith('- text:')) {
           // Start a new choice
           if (currentChoice) {
-            console.log("Adding choice:", currentChoice);
             choices.push(currentChoice);
           }
           
-          const choiceText = line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1');
-          console.log(`Creating new choice with text: "${choiceText}"`);
-          
           currentChoice = {
-            text: choiceText,
-            next: null, // Initialize with null to prevent undefined errors
+            text: line.substring('- text:'.length).trim().replace(/^"(.+)"$/, '$1'),
             rewards: {}
           };
           inRewards = false;
         } else if (line.startsWith('  next:')) {
           if (currentChoice) {
-            // Extract the next value, make sure it's not empty
-            const nextValue = line.substring('  next:'.length).trim();
-            currentChoice.next = nextValue || null;
-            console.log(`Set next: "${nextValue}" for choice "${currentChoice.text}"`);
+            currentChoice.next = line.substring('  next:'.length).trim();
           }
         } else if (line.startsWith('  rewards:')) {
           inRewards = true;
-          console.log("Entering rewards section");
         } else if (inRewards && line.startsWith('    ')) {
           // Inside rewards section
           if (line.endsWith(':')) {
@@ -468,37 +273,27 @@ const StoryGame = () => {
             if (!currentChoice.rewards[currentRewardCategory]) {
               currentChoice.rewards[currentRewardCategory] = [];
             }
-            console.log(`Set reward category: "${currentRewardCategory}"`);
           } else if (line.startsWith('      -') && currentRewardCategory) {
             // This is a reward item
-            const rewardValue = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
-            // Only add non-empty rewards
-            if (rewardValue && rewardValue !== '""' && rewardValue !== "''") {
-              currentChoice.rewards[currentRewardCategory].push(rewardValue);
-              console.log(`Added reward: "${rewardValue}" to category "${currentRewardCategory}"`);
-            }
+            const rewardItem = line.substring('      -'.length).trim().replace(/^"(.+)"$/, '$1');
+            currentChoice.rewards[currentRewardCategory].push(rewardItem);
           }
         }
       }
       
       // Add the last choice if there is one
       if (currentChoice) {
-        console.log("Adding final choice:", currentChoice);
         choices.push(currentChoice);
       }
-      
-      console.log("Choices processed:", choices);
       
       return {
         nodeId: nodeId,
         title: frontmatter.title || '',
         text: mainContent,
-        choices: choices.length > 0 ? choices : []
+        choices: choices.length > 0 ? choices : null
       };
     } catch (error) {
-      console.error(`Error parsing story content for node ${nodeId}:`, error);
-      document.getElementById('error-details').textContent = `Parser error: ${error.message}`;
-      document.getElementById('debug-panel').style.display = 'block';
+      debugNodeLoading(`Error parsing story content for node ${nodeId}:`, error);
       return null;
     }
   };
@@ -510,36 +305,26 @@ const StoryGame = () => {
     // First try: Use hardcoded content if available
     if (HARDCODED_NODES[nodeId]) {
       console.log(`Using hardcoded content for ${nodeId}`);
-      
-      // Use the direct parser for simplicity and reliability
-      const content = directChoiceParser(nodeId, HARDCODED_NODES[nodeId]);
-      console.log("Parsed content:", content);
-      
-      if (content && content.choices) {
-        console.log("Choices ready for rendering:", content.choices);
-      }
-      return content;
+      return parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
     }
     
     // Try loading from file (this might not work on GitHub Pages due to path issues)
     try {
       // Try different possible path patterns for GitHub Pages
       const possiblePaths = [
-        `/_data/story/nodes/${nodeId}.md`,        // Most likely path based on your structure
-        `/data/story/nodes/${nodeId}.md`,         // Alternative without leading underscore
-        `/story/nodes/${nodeId}.md`,              // Another possible variation
-        `/nodes/${nodeId}.md`,                    // Shortened path
-        `/${nodeId}.md`,                          // Root path (least likely)
-        `/socialstudies/_data/story/nodes/${nodeId}.md`,  // With potential prefix
-        `/socialstudies/data/story/nodes/${nodeId}.md`    // Alternative with prefix
+        `/_data/story/nodes/${nodeId}.md`,
+        `../_data/story/nodes/${nodeId}.md`,
+        `./_data/story/nodes/${nodeId}.md`,
+        `../../../_data/story/nodes/${nodeId}.md`,
+        `../../_data/story/nodes/${nodeId}.md`,
+        `/data/story/nodes/${nodeId}.md`,
+        `/story/nodes/${nodeId}.md`,
+        `/nodes/${nodeId}.md`,
+        `/${nodeId}.md`
       ];
       
       let response = null;
       let successPath = null;
-      
-      // Debug output
-      console.log('Loading story node:', nodeId);
-      console.log('Possible paths:', possiblePaths);
       
       // Try each path until one works
       for (const path of possiblePaths) {
@@ -547,51 +332,46 @@ const StoryGame = () => {
         document.getElementById('path-attempted').textContent = path;
         
         try {
-          const resp = await fetch(path);
+          const resp = await fetch(path, {
+            cache: 'no-cache', // Add this to avoid caching issues
+            headers: {
+              'Accept': 'text/plain' // Ensure we're asking for text
+            }
+          });
+          
           if (resp.ok) {
             response = await resp.text();
             successPath = path;
             console.log(`Successfully loaded from: ${path}`);
             break;
+          } else {
+            console.log(`Failed at path: ${path} - Status: ${resp.status}`);
           }
         } catch (e) {
-          console.log(`Failed at path: ${path}`, e);
+          console.log(`Error at path: ${path}`, e);
           document.getElementById('error-details').textContent = e.message;
         }
       }
       
-      // If we successfully loaded content
       if (response) {
         return parseStoryContent(nodeId, response);
-      } 
-      
-      // No content loaded, throw error to trigger fallback
-      throw new Error(`Could not load content for node "${nodeId}" from any path. Check that the file exists in _data/story/nodes/ folder.`);
-      
+      } else {
+        throw new Error("Could not load content from any path");
+      }
     } catch (error) {
-      console.error(`Error loading story node ${nodeId}:`, error);
-      document.getElementById('error-details').textContent = error.message;
+      debugNodeLoading(`Error loading story node ${nodeId}:`, error);
       document.getElementById('debug-panel').style.display = 'block';
       
-      // Check if this node has a fallback first
-      if (HARDCODED_NODES[nodeId]) {
-        return parseStoryContent(nodeId, HARDCODED_NODES[nodeId]);
-      }
-      
-      // Return generic fallback error node
+      // Return fallback error node
       return {
         nodeId: nodeId,
-        title: 'Node Not Found',
-        text: `The story node "${nodeId}" could not be loaded. This might be because:
+        title: 'Using Fallback Content',
+        text: `The story node "${nodeId}" has been loaded from our backup content.
 
-1. The file doesn't exist yet in your _data/story/nodes/ folder
-2. There might be a path issue in your GitHub Pages setup
-3. The link from the previous node might have a typo
+If you're a student: Enjoy the adventure! Your teacher is working to make this even better.
 
-If you're a student: Please let your teacher know about this issue! In the meantime, you can go back and try a different path.
-
-If you're the teacher: You'll need to create a file named "${nodeId}.md" in your _data/story/nodes/ folder. You can also add this node to the HARDCODED_NODES object in the game layout file for immediate testing.`,
-        choices: []
+If you're the teacher: If you'd like to customize this content, you can edit the HARDCODED_NODES object in the game layout file.`,
+        choices: HARDCODED_NODES[nodeId] ? parseStoryContent(nodeId, HARDCODED_NODES[nodeId]).choices : []
       };
     }
   };
@@ -607,26 +387,16 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
     items: [],
     character_traits: []
   });
-  const [errorMessage, setErrorMessage] = React.useState('');
 
   // Load content when the current node changes
   React.useEffect(() => {
     const fetchContent = async () => {
       setLoading(true);
-      setErrorMessage('');
-      try {
-        const content = await loadStoryContent(currentNode);
-        if (content) {
-          setStoryContent(content);
-        } else {
-          setErrorMessage(`Failed to load node: ${currentNode}`);
-        }
-      } catch (error) {
-        console.error("Error in fetchContent:", error);
-        setErrorMessage(`Error: ${error.message}`);
-      } finally {
-        setLoading(false);
+      const content = await loadStoryContent(currentNode);
+      if (content) {
+        setStoryContent(content);
       }
+      setLoading(false);
     };
     
     fetchContent();
@@ -643,10 +413,17 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
           const parsedContent = parseStoryContent(currentNode, content);
           if (parsedContent) {
             setStoryContent(parsedContent);
-            document.getElementById('debug-panel').style.display = 'none';
           }
         }
       });
+    }
+  }, []);
+
+  // Enable debug panel if debug=true in URL
+  React.useEffect(() => {
+    const debugPanel = document.getElementById('debug-panel');
+    if (debugPanel && window.location.search.includes('debug=true')) {
+      debugPanel.style.display = 'block';
     }
   }, []);
 
@@ -663,9 +440,8 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
         Object.entries(choice.rewards).forEach(([category, items]) => {
           if (Array.isArray(items) && items.length > 0) {
             if (!newJournal[category]) newJournal[category] = [];
-            // Add unique items only and filter out empty strings
-            const filteredItems = items.filter(item => item && item.trim() !== '');
-            newJournal[category] = [...new Set([...newJournal[category], ...filteredItems])];
+            // Add unique items only
+            newJournal[category] = [...new Set([...newJournal[category], ...items])];
           }
         });
         
@@ -673,23 +449,9 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
       });
     }
 
-    // Check if next node is defined
-    if (!choice.next) {
-      setErrorMessage(`Missing destination for choice: "${choice.text}". Check your markdown file for a missing "next:" property.`);
-      return;
-    }
-
     // Update current node - make sure the nodeId is lowercase to match your file naming
     const nextNode = choice.next.toLowerCase();
-    console.log(`Navigating to node: ${nextNode}`);
     setCurrentNode(nextNode);
-    
-    // Debug: Check if the next node exists in hardcoded nodes
-    if (HARDCODED_NODES[nextNode]) {
-      console.log(`Node ${nextNode} exists in hardcoded nodes.`);
-    } else {
-      console.log(`Warning: Node ${nextNode} not found in hardcoded nodes. Will attempt to load from file.`);
-    }
   };
   
   const goBack = () => {
@@ -705,11 +467,9 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
     }
   };
 
-  const resetGame = () => {
-    console.log("Resetting game...");
+  const resetGame = async () => {
     setCurrentNode('start');
     setHistory([]);
-    setErrorMessage('');
     setJournal({
       skills: [],
       relationships: [],
@@ -722,10 +482,15 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
   // Journal Section Component
   const JournalSection = ({ title, items }) => {
     if (!items || items.length === 0) return null;
+    
+    // Filter out empty strings
+    const validItems = items.filter(item => item && item.trim() !== "");
+    if (validItems.length === 0) return null;
+    
     return React.createElement('div', { className: 'journal-section' },
       React.createElement('h3', { key: 'title' }, title),
       React.createElement('ul', { key: 'list' }, 
-        items.map((item, index) => 
+        validItems.map((item, index) => 
           React.createElement('li', { key: index }, item)
         )
       )
@@ -733,35 +498,11 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
   };
 
   if (loading) {
-    return React.createElement('div', { className: 'loading' }, 
-      React.createElement('div', { className: 'spinner' }),
-      'Loading story...'
-    );
-  }
-
-  if (errorMessage) {
-    return       React.createElement('div', { key: 'error' }, 
-      `Error: ${errorMessage}`,
-      React.createElement('button', {
-        onClick: () => {
-          resetGame();
-          setErrorMessage('');
-        },
-        className: 'reset-button',
-        style: { marginTop: '20px' }
-      }, 'Return to Start')
-    );
+    return React.createElement('div', { className: 'loading' }, 'Loading story...');
   }
 
   if (!storyContent) {
-    return React.createElement('div', { className: 'error' }, 
-      'Could not load story content',
-      React.createElement('button', {
-        onClick: resetGame,
-        className: 'reset-button',
-        style: { marginTop: '20px' }
-      }, 'Return to Start')
-    );
+    return React.createElement('div', { className: 'error' }, 'Error loading story content');
   }
 
   return React.createElement('div', { className: 'game-container' }, [
@@ -774,28 +515,17 @@ If you're the teacher: You'll need to create a file named "${nodeId}.md" in your
         storyContent.title
       ),
       React.createElement('div', { key: 'story', className: 'story-text', 
-        dangerouslySetInnerHTML: { __html: storyContent.text.replace(/\n/g, '<br>') }
+        dangerouslySetInnerHTML: { __html: storyContent.text }
       }),
-      storyContent.choices && storyContent.choices.length > 0 ? 
-        React.createElement('div', { key: 'choices', className: 'choice-container' }, 
-          storyContent.choices.map((choice, index) => {
-            console.log(`Rendering choice ${index}:`, choice);
-            return React.createElement('button', {
-              key: `choice-${index}`,
-              onClick: () => handleChoice(choice),
-              className: 'choice-button'
-            }, choice.text);
-          })
-        ) : (
-          // End of story node - display a message if there are no choices
-          React.createElement('div', { key: 'story-end', className: 'story-end' },
-            React.createElement('p', {}, "You've reached the end of this path of your adventure."),
-            React.createElement('button', {
-              onClick: resetGame,
-              className: 'reset-button'
-            }, 'Start a New Journey')
-          )
-        ),
+      storyContent.choices && React.createElement('div', { key: 'choices', className: 'choice-container' }, 
+        storyContent.choices.map((choice, index) => 
+          React.createElement('button', {
+            key: `choice-${index}`,
+            onClick: () => handleChoice(choice),
+            className: 'choice-button'
+          }, choice.text)
+        )
+      ),
       React.createElement('div', { key: 'game-controls', className: 'game-controls' }, [
         history.length > 0 && React.createElement('button', {
           key: 'back-button',
@@ -986,25 +716,6 @@ ReactDOM.render(
   padding: 2rem;
   font-size: 1.2rem;
   color: #4a5568;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: #3182ce;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .error {
@@ -1012,17 +723,6 @@ ReactDOM.render(
   padding: 2rem;
   color: #e53e3e;
   font-size: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.story-end {
-  text-align: center;
-  padding: 20px;
-  background: #f7fafc;
-  border-radius: 8px;
-  margin-bottom: 50px;
 }
 
 .journal-section {
